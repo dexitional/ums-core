@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client/sso"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("SSO_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model activity {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  uid       Int?
+  title     String?   @db.VarChar(255)
+  meta      String?   @db.Text
+  timestamp DateTime? @default(now()) @db.Timestamp(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model app {
+  app_id    Int     @id @default(autoincrement())
+  app_name  String? @db.VarChar(300)
+  app_tag   String? @db.VarChar(50)
+  app_desc  String? @db.Text
+  app_token String? @db.VarChar(100)
+  app_db    String? @db.VarChar(50)
+  status    Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model app_role {
+  arole_id  Int     @id @default(autoincrement())
+  app_id    Int?
+  role_name String? @db.VarChar(150)
+  role_desc String? @db.Text
+  status    Int?    @default(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model group {
+  group_id   Int     @id @default(autoincrement())
+  group_name String? @db.VarChar(50)
+  group_desc String? @db.Text
+  status     Int?    @default(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model photo {
+  photo_id Int     @id @default(autoincrement())
+  group_id Int?
+  uid      Int?
+  tag      String? @db.VarChar(150)
+  path     String? @db.VarChar(300)
+  status   Int?    @default(1)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user {
+  uid           Int       @id @default(autoincrement())
+  group_id      Int?
+  tag           String?   @unique(map: "tag") @db.VarChar(100)
+  username      String?   @unique(map: "username") @db.VarChar(255)
+  password      String?   @db.VarChar(50)
+  flag_locked   Int?      @default(0)
+  flag_disabled Int?      @default(0)
+  flag_ad       Int?
+  flag_gs       Int?
+  login_attempt Int?      @default(0)
+  attempt_time  DateTime? @db.Timestamp(0)
+  access_token  String?   @db.VarChar(150)
+  access_expire DateTime? @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_role {
+  urole_id Int  @id @default(autoincrement())
+  arole_id Int?
+  uid      Int?
+  status   Int? @default(1)
+}

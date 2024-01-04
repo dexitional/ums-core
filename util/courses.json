@@ -1,0 +1,954 @@
+﻿[
+    {
+        "code": "MLTC 111",
+        "title": "LABORATORY INSTRUMENTATION",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 112",
+        "title": "LABORATORY MANAGEMENT",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 113",
+        "title": "COMPUTER LITERACY",
+        "t": "2",
+        "p": "1",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 114",
+        "title": "EPIDEMIOLOGY",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 116",
+        "title": "COMMUNICATION SKILLS",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "AS 101",
+        "title": "AFRICAN STUDIES",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 117",
+        "title": "ANATOMY AND PHYSIOLOGY I",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 191",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "3",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 121",
+        "title": "BASIC ANATOMY AND PHYSIOLOGY II",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 122",
+        "title": "BIOCHEMISTRY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 123",
+        "title": "HEMATOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 124",
+        "title": "HEMATOLOGY I PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 125",
+        "title": "BACTERIOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 126",
+        "title": "BACTERIOLOGY I PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 127",
+        "title": "VIROLOGY, SEROLOGY, MYCOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 128",
+        "title": "VIROLOGY, SEROLOGY, MYCOLOGY PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 132",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "2",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 211",
+        "title": "BACTERIOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 212",
+        "title": "BACTERIOLOGY II PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 213",
+        "title": "GENERAL PATHOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 214",
+        "title": "GENERAL PATHOLOGY PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 215",
+        "title": "IMMUNOHAEMATOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 216",
+        "title": "IMMUNOHAEMATOLOGY II PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 217",
+        "title": "CHEMICAL PATHOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 218",
+        "title": "CHEMICAL PATHOLOGY II PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MTTC 242",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "2",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 221",
+        "title": "PARASITOLOGY I PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 222",
+        "title": "PARASITOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 223",
+        "title": "PHARMACOLOGY",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 224",
+        "title": "CHEMICAL PATHOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 225",
+        "title": "CHEMICAL PATHOLOGY II PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 226",
+        "title": "MEDICAL ETHICS AND PROFESSIONALISM",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MTCW 258",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "3",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 311",
+        "title": "HEALTH RESEARCH FOR HEALTH SCIENCES",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLTC 312",
+        "title": "PARASILTOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 313",
+        "title": "PARASITOLOGY II PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 314",
+        "title": "CHEMICAL PATHOLOGY III",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 315",
+        "title": "CHEMICAL PATHOLOGY III PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 316",
+        "title": "PROJECT I",
+        "t": "1",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "PPC",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "4",
+        "c": "4"
+    },
+    {
+        "code": "MLTC 321",
+        "title": "QUALITY MANAGEMENT SYSTEM",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 322",
+        "title": "PROJECT II",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 323",
+        "title": "BASIC MEDICINE",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 324",
+        "title": "MEDICAL SOCIOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 325",
+        "title": "MEDICAL PSYCHOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLTC 326",
+        "title": "HEALTH AND SAFETY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 111",
+        "title": "LABORATORY INSTRUMENTATION",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 112",
+        "title": "LABORATORY MANAGEMENT",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 113",
+        "title": "COMPUTER LITERACY",
+        "t": "2",
+        "p": "1",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 114",
+        "title": "EPIDEMIOLOGY",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 116",
+        "title": "COMMUNICATION SKILLS",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "AFS 101",
+        "title": "AFRICAN STUDIES",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 117",
+        "title": "ANATOMY AND PHYSIOLOGY I",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "PTS 119",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "3",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 121",
+        "title": "BASIC ANATOMY AND PHYSIOLOGY II",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 122",
+        "title": "BIOCHEMISTRY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 123",
+        "title": "HEMATOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 124",
+        "title": "HEMATOLOGY I PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 125",
+        "title": "BACTERIOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 126",
+        "title": "BACTERIOLOGY I PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 127",
+        "title": "VIROLOGY, SEROLOGY, MYCOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 128",
+        "title": "VIROLOGY, SEROLOGY, MYCOLOGY PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "TWS 129",
+        "title": "PRACTICUM",
+        "t": "1",
+        "p": "2",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 211",
+        "title": "BACTERIOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 212",
+        "title": "BACTERIOLOGY II PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 213",
+        "title": "GENERAL PATHOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 214",
+        "title": "GENERAL PATHOLOGY PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 215",
+        "title": "IMMUNOHAEMATOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 216",
+        "title": "IMMUNOHAEMATOLOGY II PRACTICALS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 217",
+        "title": "HEALTH RESEARCH FOR HEALTH SCIENCES",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 219",
+        "title": "BIOSTATISITCS",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "PPT 931",
+        "title": "PRACTICUM",
+        "t": "1",
+        "p": "2",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 221",
+        "title": "PARASITOLOGY I PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 222",
+        "title": "PARASITOLOGY I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 223",
+        "title": "PHARMACOLOGY",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "MLAS 224",
+        "title": "CHEMICAL PATHOLOGY II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 225",
+        "title": "CHEMICAL PATHOLOGY II PRACTICAL",
+        "t": "1",
+        "p": "1",
+        "c": "2"
+    },
+    {
+        "code": "MLAS 226",
+        "title": "MEDICAL ETHICS AND PROFESSIONALISM",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "DPT 141",
+        "title": "First Aid",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 143",
+        "title": "Hospital Practice I",
+        "t": "2",
+        "p": "2",
+        "c": "1"
+    },
+    {
+        "code": "CLT 101",
+        "title": "Computer Literacy",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 144",
+        "title": "Hospital Practice II",
+        "t": "2",
+        "p": "2",
+        "c": "1"
+    },
+    {
+        "code": "COS 102",
+        "title": "Communication Skills II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "AFS 100",
+        "title": "African studies",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 251",
+        "title": "Forensic",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 243",
+        "title": "Hospital Practice",
+        "t": "2",
+        "p": "2",
+        "c": "1"
+    },
+    {
+        "code": "DPT 252",
+        "title": "Basic Management",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "ETP 201",
+        "title": "Entrepreneurship",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 252B",
+        "title": "Store-Keeping",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 226",
+        "title": "Quality Control and Instrumentation Tech I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 228",
+        "title": "Quality Control and Instrumentation Tech I Pract.",
+        "t": "0",
+        "p": "0",
+        "c": "1"
+    },
+    {
+        "code": "STA 234",
+        "title": "Statistics",
+        "t": "2",
+        "p": "3",
+        "c": "2"
+    },
+    {
+        "code": "DPT 326",
+        "title": "Quality Control and Instrumentation Tech II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "DPT 328",
+        "title": "Quality Control and Instrumentation Tech II Pract",
+        "t": "0",
+        "p": "3",
+        "c": "1"
+    },
+    {
+        "code": "DPT 316",
+        "title": "Equipment Maintenance and Management/Pract",
+        "t": "2",
+        "p": "2",
+        "c": "2"
+    },
+    {
+        "code": "DPT 300",
+        "title": "Project Work",
+        "t": "0",
+        "p": "0",
+        "c": "4"
+    },
+    {
+        "code": "COS 101",
+        "title": "COMMUNICATION SKILLS",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "COM 101",
+        "title": "BASIC COMPUTER LITERACY",
+        "t": "2",
+        "p": "1",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 117",
+        "title": "BASIC EPIDEMIOLOGY",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 114",
+        "title": "PRIMARY HEALTHCARE",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 115",
+        "title": "ANATOMY AND PHYSIOLOGY I",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 116",
+        "title": "BASIC NURSING",
+        "t": "2",
+        "p": "1",
+        "c": "3"
+    },
+    {
+        "code": "PRAT 911",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "2",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 125",
+        "title": "PRINCIPLES OF DISEASE CONTROL",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 123",
+        "title": "HEALTH INFORMATION LAWS AND STANDARDS",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 121",
+        "title": "FUNDAMENTALS OF HEALTH INFORMATICS",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 122",
+        "title": "HEALTH RECORDS AND DATA MANAGEMT I",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 126",
+        "title": "ANATOMY AND PHYSIOLOGY II",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 127",
+        "title": "ENVIRONMENTAL HEALTH",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 124",
+        "title": "BASIC NUTRITION",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "FWA 128",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "3",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 213",
+        "title": "HEALTH SERVICE MANAGEMENT",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 214",
+        "title": "HEALTH RECORDS AND DATA MANAGEMENT II",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 215",
+        "title": "PROJECT MANAGEMENT IN HEALTH INFORMATION",
+        "t": "2",
+        "p": "1",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 216",
+        "title": "HOSPITAL ADMINISTRATION BUDGET AND CONTROL",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 211",
+        "title": "MEDICAL SOCIOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 212",
+        "title": "MEDICAL PSYCHOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "PWT 277",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "2",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 221",
+        "title": "RESEARCH METHODS FOR HEALTH SCIENCES",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 224",
+        "title": "BIOSTATISTICS/HEALTH CARE STATISTICS",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 226",
+        "title": "ORGANISATIONAL BEHAVIOUR AND MANAGEMENT",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 227",
+        "title": "DATABASE MANEGEMENT SYSTEMS",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 222",
+        "title": "BASIC MEDICINE",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 223",
+        "title": "IMMUNISATION AND COLD CHAIN MANAGEMENT",
+        "t": "2",
+        "p": "1",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 225",
+        "title": "BASIC PHARMACOLOGY",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "PFA",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "2",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 311",
+        "title": "MEDICAL DATA CLASSIFICATION AND CODING",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 312",
+        "title": "SPECIAL ISSUES IN HEALTH INFORMATICS",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 313",
+        "title": "HEALTH SECTOR INDUSTRIAL AND LABOUR RELATION",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 314",
+        "title": "ENTERPRENEURSHIP I",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    },
+    {
+        "code": "PAFW 373",
+        "title": "PRACTICUM",
+        "t": "0",
+        "p": "2",
+        "c": "2"
+    },
+    {
+        "code": "HIMC 323",
+        "title": "POPULATION HEALTH AND DEVELOPMENT",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 324",
+        "title": "OCUPATIONAL HEALTH AND SAFETY",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "FPW 321",
+        "title": "PROJECT WORK",
+        "t": "4",
+        "p": "0",
+        "c": "4"
+    },
+    {
+        "code": "HIMC 321",
+        "title": "QUALITY HEALTHCARE",
+        "t": "3",
+        "p": "0",
+        "c": "3"
+    },
+    {
+        "code": "HIMC 322",
+        "title": "ENTERPRENEURSHIP II",
+        "t": "2",
+        "p": "0",
+        "c": "2"
+    }
+]
