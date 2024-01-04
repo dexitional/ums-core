@@ -7,7 +7,7 @@
     "build": "npx tsc",
     "start": "node server/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q server/index.js\"",
-    "prisma": "npx prisma generate --schema prisma/dric.prisma --watch && npx prisma generate --schema prisma/hrms.prisma --watch"
+    "prisma": "npx prisma generate --schema prisma/ums.prisma --watch"
   },
   "dependencies": {
     "@prisma/client": "^5.3.1",
