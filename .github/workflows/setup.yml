@@ -2,12 +2,12 @@ name: mlk-backend-setup
 on: 
   workflow_dispatch:
 jobs:
-  stage-frontend:
+  stage-backend:
     env:
       GITHUB_TOKEN: ${{ secrets.PRODUCT_DEPLOY_SECRET }}
     runs-on: ubuntu-latest
     steps:
-      - name: Stage Frontend
+      - name: Stage Backend
         uses: appleboy/ssh-action@v0.1.2
         with: 
           host: ${{secrets.MLK_HOST}}
