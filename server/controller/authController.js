@@ -13,7 +13,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const authModel_1 = __importDefault(require("../model/authModel"));
-//const sso = new PrismaClient()
+const ums_1 = require("../prisma/client/ums");
+const sso = new ums_1.PrismaClient();
 //import { customAlphabet } from 'nanoid'
 const jwt = require('jsonwebtoken');
 const { customAlphabet } = require("nanoid");
@@ -22,6 +23,7 @@ const sha1 = require('sha1');
 const Auth = new authModel_1.default();
 class AuthController {
     authenticateWithCredential(req, res) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { username, password } = req.body;
@@ -30,28 +32,41 @@ class AuthController {
                 if (!password)
                     throw new Error('No password provided!');
                 // Locate Single-Sign-On Record or Student account
-                const isUser = yield Auth.withCredential(username, password);
+                //const isUser = await Auth.withCredential(username, password);
+                const isUser = yield sso.user.findFirst({ where: { username, password: sha1(password) }, include: { group: { select: { title: true } } } });
                 if (isUser) {
-                    let { uid, tag, group_id: gid } = isUser;
-                    // Get University User Record and Category
-                    const user = yield Auth.fetchUser(uid, gid);
-                    if (!user && gid == 1) {
-                        const ins = yield Auth.insertSSOUser({
-                            username: username,
-                            password: sha1(password),
-                            group_id: gid,
-                            tag: tag,
-                        });
+                    let { id, tag, groupId, group: { title: groupName } } = isUser;
+                    let user;
+                    console.log(id, tag, groupId, groupName);
+                    if (groupId == 4) { // Support
+                        const data = yield sso.support.findUnique({ where: { supportNo: Number(tag) } });
+                        console.log(data);
+                        if (data)
+                            user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName };
                     }
+                    else if (groupId == 3) { // Applicant
+                        const data = yield sso.voucher.findFirst({ where: { serial: Number(""), pin: "" } });
+                        if (data)
+                            user = { tag, fname: "Admission", mname: "", lname: "Applicant", mail: "", descriptor: "Applicant", department: "", group_id: groupId, group_name: groupName };
+                    }
+                    else if (groupId == 2) { // Staff
+                        const data = yield sso.staff.findUnique({ where: { staffNo: Number(tag) }, include: { promotion: { select: { job: true } } } });
+                        if (data)
+                            user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName };
+                    }
+                    else { // Student
+                        const data = yield sso.student.findUnique({ where: { id: tag }, include: { program: { select: { longName: true } } } });
+                        if (data)
+                            user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: (_a = data === null || data === void 0 ? void 0 : data.program) === null || _a === void 0 ? void 0 : _a.longName, department: "", group_id: groupId, group_name: groupName };
+                    }
+                    console.log(user);
                     const photo = `https://cdn.ucc.edu.gh/photos/?tag=${encodeURIComponent(tag)}`;
-                    let roles = uid ? yield Auth.fetchRoles(uid) : []; // All App Roles
-                    let evsRoles = yield Auth.fetchEvsRoles(tag); // Only Electa Roles
+                    let roles = []; // All App Roles
+                    // let evsRoles = await Auth.fetchEvsRoles(tag); // Only Electa Roles
                     // Construct UserData
                     const userdata = {
-                        user: uid
-                            ? { tag: user === null || user === void 0 ? void 0 : user.tag, fname: user === null || user === void 0 ? void 0 : user.fname, mname: user === null || user === void 0 ? void 0 : user.mname, lname: user === null || user === void 0 ? void 0 : user.lname, mail: user === null || user === void 0 ? void 0 : user.username, descriptor: user === null || user === void 0 ? void 0 : user.descriptor, department: user === null || user === void 0 ? void 0 : user.unitname, group_id: gid, group_name: user === null || user === void 0 ? void 0 : user.group_name } // SSO Record
-                            : { tag: isUser.tag, fname: isUser.fname, mname: isUser.mname, lname: isUser.lname, mail: isUser.username, descriptor: isUser.descriptor, department: isUser.unitname, group_id: gid, group_name: isUser.group_name },
-                        roles: [...roles, ...evsRoles],
+                        user,
+                        roles: [...roles],
                         photo
                     };
                     console.log(userdata);

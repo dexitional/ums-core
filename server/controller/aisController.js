@@ -15,9 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const evsModel_1 = __importDefault(require("../model/evsModel"));
 const authModel_1 = __importDefault(require("../model/authModel"));
 const ums_1 = require("../prisma/client/ums");
+//import sha1 from "sha1";
+const helper_1 = require("../util/helper");
 const ais = new ums_1.PrismaClient();
 const evs = new evsModel_1.default();
 const Auth = new authModel_1.default();
+const sha1 = require('sha1');
 class AisController {
     /* Student */
     fetchStudents(req, res) {
@@ -43,10 +46,12 @@ class AisController {
                 const resp = yield ais.$transaction([
                     ais.student.count(Object.assign({}, (searchCondition))),
                     ais.student.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize), include: {
-                            country: true,
+                            title: { select: { label: true } },
+                            country: { select: { longName: true } },
                             program: {
                                 select: {
-                                    longName: true
+                                    longName: true,
+                                    department: { select: { title: true } }
                                 }
                             },
                         } }))
@@ -71,7 +76,104 @@ class AisController {
     fetchStudent(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const resp = yield yield ais.student.findUnique({
+                const resp = yield ais.student.findUnique({
+                    where: {
+                        id: req.params.id
+                    },
+                    include: {
+                        title: { select: { label: true } },
+                        country: { select: { longName: true } },
+                        program: {
+                            select: {
+                                longName: true,
+                                department: { select: { title: true } }
+                            }
+                        },
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchStudentTranscript(req, res) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.assessment.findMany({
+                    where: { indexno: req.params.id },
+                    include: {
+                        student: { select: { fname: true, mname: true, id: true, program: { select: { longName: true } } } },
+                        scheme: { select: { gradeMeta: true, } },
+                        session: { select: { title: true, } },
+                        course: { select: { title: true } },
+                    },
+                    orderBy: { session: { createdAt: 'asc' } }
+                });
+                if (resp) {
+                    var mdata = new Map();
+                    for (const sv of resp) {
+                        const index = (_b = (_a = sv === null || sv === void 0 ? void 0 : sv.session) === null || _a === void 0 ? void 0 : _a.title) !== null && _b !== void 0 ? _b : 'none';
+                        const grades = (_c = sv.scheme) === null || _c === void 0 ? void 0 : _c.gradeMeta;
+                        const zd = Object.assign(Object.assign({}, sv), { grade: yield (0, helper_1.getGrade)(sv.totalScore, grades), gradepoint: yield (0, helper_1.getGradePoint)(sv.totalScore, grades) });
+                        // Data By Courses
+                        if (mdata.has(index)) {
+                            mdata.set(index, [...mdata.get(index), Object.assign({}, zd)]);
+                        }
+                        else {
+                            mdata.set(index, [Object.assign({}, zd)]);
+                        }
+                    }
+                    res.status(200).json(Array.from(mdata));
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchStudentFinance(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.studentAccount.findMany({
+                    where: { studentId: req.params.id },
+                    include: {
+                        student: { select: { fname: true, mname: true, indexno: true, program: { select: { longName: true } } } },
+                        bill: { select: { narrative: true } },
+                        charge: { select: { title: true } },
+                        session: { select: { title: true } },
+                        transaction: { select: { transtag: true } },
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchStudentActivity(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.student.findUnique({
                     where: {
                         id: req.params.id
                     },
@@ -224,6 +326,42 @@ class AisController {
                 else {
                     res.status(204).json({ message: `no record found` });
                 }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    runAccount(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let resp = [];
+                const students = yield ais.student.findMany();
+                // if(students.length){
+                //   for(const student of students){
+                //      const ins = await ais.user.create({
+                //          data: {
+                //             tag: student?.id,
+                //             username: student?.id,
+                //             password: sha1(student.fname?.toLowerCase()),
+                //             unlockPin: '2024',
+                //             locked: false,
+                //             group: {
+                //                connect: {
+                //                   id: 1
+                //                }
+                //             },
+                //          }
+                //      })
+                //      resp.push(ins)
+                //   }
+                // }
+                // if(students){
+                //   res.status(200).json(resp)
+                // } else {
+                //   res.status(204).json({ message: `no record found` })
+                // }
             }
             catch (error) {
                 console.log(error);

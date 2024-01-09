@@ -418,14 +418,6 @@ exports.Prisma.InformerScalarFieldEnum = {
   content: 'content',
   smsContent: 'smsContent',
   receiver: 'receiver',
-  semester: 'semester',
-  classScore: 'classScore',
-  examScore: 'examScore',
-  totalScore: 'totalScore',
-  type: 'type',
-  scoreA: 'scoreA',
-  scoreB: 'scoreB',
-  scoreC: 'scoreC',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1066,6 +1058,20 @@ exports.Prisma.ProviderScalarFieldEnum = {
   status: 'status'
 };
 
+exports.Prisma.SupportScalarFieldEnum = {
+  supportNo: 'supportNo',
+  fname: 'fname',
+  mname: 'mname',
+  lname: 'lname',
+  gender: 'gender',
+  phone: 'phone',
+  email: 'email',
+  address: 'address',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.JobScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1483,6 +1489,7 @@ exports.Prisma.ModelName = {
   user: 'user',
   userRole: 'userRole',
   provider: 'provider',
+  support: 'support',
   job: 'job',
   promotion: 'promotion',
   postinfo: 'postinfo',

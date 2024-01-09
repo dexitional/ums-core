@@ -413,7 +413,7 @@ model program {
   updatedAt DateTime @updatedAt
 
   scheme scheme? @relation(fields: [schemeId], references: [id])
-  unit unit? @relation(fields: [unitId], references: [id])
+  department unit? @relation(fields: [unitId], references: [id])
   mode mode? @relation(fields: [modeId], references: [id])
 
   student student[]
@@ -429,7 +429,7 @@ model program {
 }
 
 model student {
-  id String @id 
+  id String @id @unique
   indexno String? @db.VarChar(50) @unique
   titleId String? 
   fname String @db.VarChar(255)
@@ -487,6 +487,7 @@ model student {
   charge charge[]
   transaction transaction[] 
   studentAccount studentAccount[]  
+  assessment assessment[]  
   @@map("ais_student")
 }
 
@@ -638,7 +639,7 @@ model assessment {
   sessionId String 
   schemeId String 
   courseId String 
-  indexno String @db.VarChar(50)
+  indexno String
   credit Int 
   semesterNum Int 
   classScore Int? 
@@ -655,24 +656,17 @@ model assessment {
   session session? @relation(fields: [sessionId], references: [id])
   scheme scheme? @relation(fields: [schemeId], references: [id])
   course course? @relation(fields: [courseId], references: [id])
+  student student? @relation(fields: [indexno], references: [id])
   @@map("ais_assessment")
 }
 
 model informer {
   id String @id @default(uuid())
-  reference String 
+  reference String? 
   title String @db.VarChar(350)
-  content String @db.Text
-  smsContent String @db.Text
+  content String? @db.Text
+  smsContent String? @db.Text
   receiver receiver 
-  semester Int 
-  classScore Int? 
-  examScore Int? 
-  totalScore Int 
-  type scoreType 
-  scoreA Int?
-  scoreB Int?
-  scoreC Int?
   status Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -682,12 +676,12 @@ model informer {
 
 model letter {
   id String @id @default(uuid())
-  tag String 
+  tag String? 
   title String @db.VarChar(350)
   signatory String @db.Text
   signature String @db.LongText
   template String @db.LongText
-  cc String @db.Text
+  cc String? @db.Text
   status Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -702,9 +696,9 @@ model sheet {
   unitId String?
   programId String 
   majorId String? 
-  assignStaffId String
-  assessorId String?
-  certifierId String?
+  assignStaffId Int?
+  assessorId Int?
+  certifierId Int?
   semesterNum Int 
   sessionMode String @db.VarChar(50)
   studentCount Int
@@ -718,8 +712,11 @@ model sheet {
 
   session session? @relation(fields: [sessionId], references: [id])
   program program? @relation(fields: [programId], references: [id])
-  course course? @relation(fields: [courseId], references: [id])
   major major? @relation(fields: [majorId], references: [id])
+  course course? @relation(fields: [courseId], references: [id])
+  assignee staff? @relation("assignee",fields: [assignStaffId], references: [staffNo])
+  assessor staff? @relation("assessor",fields: [assessorId], references: [staffNo])
+  certifier staff? @relation("certifier",fields: [certifierId], references: [staffNo])
 
   @@map("ais_sheet")
 }
@@ -799,7 +796,7 @@ model resit {
   registerSession session? @relation("registerSession",fields: [registerSessionId], references: [id])
   scheme scheme? @relation(fields: [schemeId], references: [id])
   course course? @relation(fields: [courseId], references: [id])
-  indexnum student? @relation(fields: [indexno], references: [indexno])
+  student student? @relation(fields: [indexno], references: [indexno])
   
 
   @@map("ais_resit")
@@ -1552,6 +1549,22 @@ model provider {
   @@map("sso_provider")
 }
 
+model support {
+  supportNo Int @id @default(autoincrement()) 
+  fname String @db.VarChar(255)
+  mname String? @db.VarChar(350)
+  lname String @db.VarChar(255)
+  gender String @db.VarChar(20) 
+  phone String @db.VarChar(20)
+  email String? @db.VarChar(255)
+  address String? @db.VarChar(350)
+  status Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("sso_support")
+}
+
 
 
 // HRS - HUMAN RESOURCE MANAGEMENT  MODELS
@@ -1719,6 +1732,9 @@ model staff {
   transwift transwift[]
   staffPromotion promotion[] @relation("staffPromotion")
   staffPosition position[] @relation("staffPosition")
+  assignee sheet[] @relation("assignee")
+  assessor sheet[] @relation("assessor")
+  certifier sheet[] @relation("certifier")
   @@map("hrs_staff")
 }
 

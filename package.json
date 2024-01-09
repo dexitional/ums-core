@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node server/index.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q server/index.js\"",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon server/index.js\"",
+    "dev2": "concurrently \"npx tsc --watch\" \"nodemon --delay 500ms -q server/index.js\"",
     "prisma": "npx prisma generate --schema prisma/ums.prisma --watch"
   },
   "dependencies": {

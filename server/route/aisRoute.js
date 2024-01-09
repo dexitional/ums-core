@@ -15,11 +15,16 @@ class AisRoute {
         /* Student */
         this.router.get('/students', this.controller.fetchStudents);
         this.router.get('/students/:id', this.controller.fetchStudent);
+        this.router.get('/students/:id/transcript', this.controller.fetchStudentTranscript);
+        this.router.get('/students/:id/finance', this.controller.fetchStudentFinance);
+        this.router.get('/students/:id/activity', this.controller.fetchStudentActivity);
+        this.router.get('/students/:id', this.controller.fetchStudent);
         this.router.post('/students', this.controller.postStudent);
         this.router.patch('/students/:id', this.controller.updateStudent);
         this.router.delete('/students/:id', this.controller.deleteStudent);
         /* Run Scripts */
         this.router.get('/run-data', this.controller.runData);
+        this.router.get('/run-account', this.controller.runAccount);
     }
 }
 exports.default = new AisRoute().router;

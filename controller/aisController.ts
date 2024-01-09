@@ -4,9 +4,12 @@ import EvsModel from '../model/evsModel'
 import AuthModel from '../model/authModel'
 import { PrismaClient } from '../prisma/client/ums'
 import moment from "moment";
+//import sha1 from "sha1";
+import { getGrade, getGradePoint } from "../util/helper";
 const ais = new PrismaClient()
 const evs = new EvsModel();
 const Auth = new AuthModel();
+const sha1 = require('sha1');
 
 
 export default class AisController {
@@ -39,10 +42,12 @@ export default class AisController {
                   skip: offset,
                   take: Number(pageSize),
                   include: { 
-                     country:true,
+                     title:{ select: { label: true }},
+                     country:{ select: { longName: true }},
                      program:{
                       select:{
-                        longName:true
+                        longName:true,
+                        department: { select: { title: true } }
                       }
                      },
                   }
@@ -66,15 +71,17 @@ export default class AisController {
 
      async fetchStudent(req: Request,res: Response) {
          try {
-            const resp = await await ais.student.findUnique({
+            const resp = await ais.student.findUnique({
                where: { 
                    id: req.params.id 
                },
                include: { 
-                  country:true,
+                  title:{ select: { label: true }},
+                  country:{ select: { longName: true }},
                   program:{
                      select:{
-                       longName:true
+                       longName:true,
+                       department: { select: { title: true } }
                      }
                   },
                }, 
@@ -89,7 +96,93 @@ export default class AisController {
             return res.status(500).json({ message: error.message }) 
          }
      }
- 
+
+     async fetchStudentTranscript(req: Request,res: Response) {
+         try {
+            const resp = await ais.assessment.findMany({
+               where: { indexno: req.params.id },
+               include: { 
+                  student: { select: { fname: true, mname: true, id: true, program: { select: { longName: true } } } },
+                  scheme: { select: { gradeMeta: true, } },
+                  session: { select: { title: true, } },
+                  course:{ select:{ title:true } },
+               }, 
+               orderBy: { session: { createdAt: 'asc' }}
+            })
+            
+           
+            if(resp){ 
+               var mdata:any = new Map();
+               for(const sv of resp){
+                  const index: string = sv?.session?.title ?? 'none';
+                  const grades: any = sv.scheme?.gradeMeta;
+                  const zd = { ...sv, grade: await getGrade(sv.totalScore,grades ),gradepoint: await getGradePoint(sv.totalScore,grades ) }
+                  // Data By Courses
+                  if(mdata.has(index)){
+                    mdata.set(index, [...mdata.get(index), { ...zd }])
+                  }else{
+                     mdata.set(index,[{ ...zd }])
+                  }
+               }
+               res.status(200).json(Array.from(mdata))
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+       
+     async fetchStudentFinance(req: Request,res: Response) {
+         try {
+            const resp = await ais.studentAccount.findMany({
+               where: { studentId: req.params.id },
+               include: { 
+                  student: { select: { fname: true, mname: true, indexno: true, program: { select: { longName: true } } } },
+                  bill: { select: { narrative: true }},
+                  charge: { select: { title: true }},
+                  session: { select: { title: true }},
+                  transaction: { select: { transtag: true }},
+               }, 
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async fetchStudentActivity(req: Request,res: Response) {
+         try {
+            const resp = await ais.student.findUnique({
+               where: { 
+                  id: req.params.id 
+               },
+               include: { 
+                  country:true,
+                  program:{
+                     select:{
+                     longName:true
+                     }
+                  },
+               }, 
+            })
+            if(resp){
+            res.status(200).json(resp)
+            } else {
+            res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
      async postStudent(req: Request,res: Response) {
        try {
         
@@ -216,6 +309,40 @@ export default class AisController {
          } else {
            res.status(204).json({ message: `no record found` })
          }
+        } catch (error: any) {
+           console.log(error)
+           return res.status(500).json({ message: error.message }) 
+        }
+    }
+
+    async runAccount(req: Request,res: Response) {
+      try { 
+         let resp = [];
+         const students = await ais.student.findMany();
+         // if(students.length){
+         //   for(const student of students){
+         //      const ins = await ais.user.create({
+         //          data: {
+         //             tag: student?.id,
+         //             username: student?.id,
+         //             password: sha1(student.fname?.toLowerCase()),
+         //             unlockPin: '2024',
+         //             locked: false,
+         //             group: {
+         //                connect: {
+         //                   id: 1
+         //                }
+         //             },
+         //          }
+         //      })
+         //      resp.push(ins)
+         //   }
+         // }
+         // if(students){
+         //   res.status(200).json(resp)
+         // } else {
+         //   res.status(204).json({ message: `no record found` })
+         // }
         } catch (error: any) {
            console.log(error)
            return res.status(500).json({ message: error.message }) 

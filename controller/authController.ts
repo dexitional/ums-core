@@ -1,8 +1,7 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import AuthModel from '../model/authModel'
-import { IUser } from "../types/auth";
-import { PrismaClient } from '../prisma/client/sso'
-//const sso = new PrismaClient()
+import { PrismaClient } from '../prisma/client/ums'
+const sso = new PrismaClient()
 //import { customAlphabet } from 'nanoid'
 
 const jwt = require('jsonwebtoken');
@@ -21,30 +20,38 @@ export default class AuthController {
            if(!username) throw new Error('No username provided!');
            if(!password) throw new Error('No password provided!');
            // Locate Single-Sign-On Record or Student account
-           const isUser = await Auth.withCredential(username, password);
+           //const isUser = await Auth.withCredential(username, password);
+           const isUser:any = await sso.user.findFirst({ where: { username, password: sha1(password)}, include: { group: { select: { title: true }}}});
            if (isUser) {
-                let { uid, tag, group_id: gid } = isUser;
-                // Get University User Record and Category
-                const user = await Auth.fetchUser(uid,gid)
-                if(!user && gid == 1){
-                  const ins = await Auth.insertSSOUser({
-                    username: username,
-                    password: sha1(password),
-                    group_id: gid, 
-                    tag: tag,
-                  });
-                }
+                let { id, tag, groupId, group: { title: groupName } } = isUser;
+                let user;
+                console.log( id, tag, groupId,groupName)
+                if(groupId == 4){ // Support
+                   const data = await sso.support.findUnique({ where: { supportNo: Number(tag) } }); 
+                   console.log(data)
+                   if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName }
                 
+                } else if(groupId == 3){ // Applicant
+                   const data = await sso.voucher.findFirst({ where: { serial: Number(""), pin: "" } }); 
+                   if(data) user = { tag, fname: "Admission", mname: "", lname: "Applicant" , mail: "", descriptor: "Applicant", department: "", group_id: groupId, group_name: groupName }
+
+                } else if(groupId == 2){ // Staff
+                   const data = await sso.staff.findUnique({ where: { staffNo: Number(tag) }, include: { promotion: { select: { job: true }}} }); 
+                   if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName }
+
+                } else { // Student
+                   const data = await sso.student.findUnique({ where: { id : tag }, include: { program: { select: { longName: true }}} }); 
+                   if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: data?.program?.longName, department: "", group_id: groupId, group_name: groupName }
+                }
+                console.log(user)
                 const photo = `https://cdn.ucc.edu.gh/photos/?tag=${encodeURIComponent(tag)}`;
-                let roles = uid ? await Auth.fetchRoles(uid) : []; // All App Roles
-                let evsRoles = await Auth.fetchEvsRoles(tag); // Only Electa Roles
+                let roles:any = []; // All App Roles
+                // let evsRoles = await Auth.fetchEvsRoles(tag); // Only Electa Roles
                 // Construct UserData
                 const userdata: any = {
-                    user: uid 
-                    ? { tag: user?.tag, fname: user?.fname, mname: user?.mname, lname: user?.lname, mail: user?.username, descriptor: user?.descriptor, department: user?.unitname, group_id: gid, group_name: user?.group_name } // SSO Record
-                    : { tag: isUser.tag, fname: isUser.fname, mname: isUser.mname, lname: isUser.lname, mail: isUser.username, descriptor: isUser.descriptor, department: isUser.unitname, group_id: gid, group_name: isUser.group_name }, // Student Record
-                    roles: [...roles, ...evsRoles ],
-                    photo
+                  user,
+                  roles: [...roles ],
+                  photo
                 }
                 console.log(userdata)
                 // Generate Session Token & 
@@ -54,8 +61,8 @@ export default class AuthController {
             
             } else {
                 res.status(401).json({
-                    success: false,
-                    message: "Invalid Username or Password!",
+                   success: false,
+                   message: "Invalid Username or Password!",
                 });
             }
         
