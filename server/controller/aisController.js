@@ -48,6 +48,9 @@ class AisController {
                     ais.student.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize), include: {
                             title: { select: { label: true } },
                             country: { select: { longName: true } },
+                            region: { select: { title: true } },
+                            religion: { select: { title: true } },
+                            disability: { select: { title: true } },
                             program: {
                                 select: {
                                     longName: true,
@@ -83,6 +86,9 @@ class AisController {
                     include: {
                         title: { select: { label: true } },
                         country: { select: { longName: true } },
+                        region: { select: { title: true } },
+                        religion: { select: { title: true } },
+                        disability: { select: { title: true } },
                         program: {
                             select: {
                                 longName: true,
@@ -203,15 +209,7 @@ class AisController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const resp = yield ais.student.create({
-                    data: Object.assign({}, req.body),
-                    include: {
-                        country: true,
-                        program: {
-                            select: {
-                                longName: true
-                            }
-                        },
-                    }
+                    data: Object.assign({}, req.body)
                 });
                 if (resp) {
                     res.status(200).json(resp);
@@ -229,11 +227,16 @@ class AisController {
     updateStudent(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                const { titleId, programId, countryId, regionId, religionId, disabilityId } = req.body;
+                delete req.body.titleId;
+                delete req.body.programId;
+                delete req.body.countryId;
+                delete req.body.regionId;
+                delete req.body.religionId;
+                delete req.body.disabilityId;
                 const resp = yield ais.student.update({
-                    where: {
-                        id: req.params.id
-                    },
-                    data: Object.assign({}, req.body)
+                    where: { id: req.params.id },
+                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), programId && ({ program: { connect: { id: programId } } })), titleId && ({ title: { connect: { id: titleId } } })), countryId && ({ country: { connect: { id: countryId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), disabilityId && ({ disability: { connect: { id: disabilityId } } }))
                 });
                 if (resp) {
                     res.status(200).json(resp);
@@ -259,6 +262,608 @@ class AisController {
                 }
                 else {
                     res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Courses */
+    fetchCourses(req, res) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            const { page = 1, pageSize = 6, keyword = '' } = req.query;
+            const offset = (page - 1) * pageSize;
+            let searchCondition = {};
+            try {
+                if (keyword)
+                    searchCondition = {
+                        where: {
+                            OR: [
+                                { title: { contains: keyword } },
+                                { id: { contains: keyword } },
+                            ],
+                        }
+                    };
+                const resp = yield ais.$transaction([
+                    ais.course.count(Object.assign({}, (searchCondition))),
+                    ais.course.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize) }))
+                ]);
+                if (resp && ((_a = resp[1]) === null || _a === void 0 ? void 0 : _a.length)) {
+                    res.status(200).json({
+                        totalPages: (_b = Math.ceil(resp[0] / pageSize)) !== null && _b !== void 0 ? _b : 0,
+                        totalData: (_c = resp[1]) === null || _c === void 0 ? void 0 : _c.length,
+                        data: resp[1],
+                    });
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchCourse(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.course.findUnique({
+                    where: {
+                        id: req.params.id
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    postCourse(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.course.create({
+                    data: Object.assign({}, req.body),
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    updateCourse(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.course.update({
+                    where: {
+                        id: req.params.id
+                    },
+                    data: Object.assign({}, req.body)
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    deleteCourse(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.course.delete({
+                    where: { id: req.params.id }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* programs */
+    fetchProgramList(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.findMany({
+                    where: { status: true },
+                    include: {
+                        department: { select: { title: true } },
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchPrograms(req, res) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            const { page = 1, pageSize = 6, keyword = '' } = req.query;
+            const offset = (page - 1) * pageSize;
+            let searchCondition = {};
+            try {
+                if (keyword)
+                    searchCondition = {
+                        where: {
+                            OR: [
+                                { code: { contains: keyword } },
+                                { shortName: { contains: keyword } },
+                                { longName: { contains: keyword } },
+                                { prefix: { contains: keyword } },
+                            ],
+                        }
+                    };
+                const resp = yield ais.$transaction([
+                    ais.program.count(Object.assign({}, (searchCondition))),
+                    ais.program.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize), include: {
+                            department: { select: { title: true } },
+                            student: { select: { _count: true } }
+                        } }))
+                ]);
+                if (resp && ((_a = resp[1]) === null || _a === void 0 ? void 0 : _a.length)) {
+                    res.status(200).json({
+                        totalPages: (_b = Math.ceil(resp[0] / pageSize)) !== null && _b !== void 0 ? _b : 0,
+                        totalData: (_c = resp[1]) === null || _c === void 0 ? void 0 : _c.length,
+                        data: resp[1],
+                    });
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchProgram(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.findUnique({
+                    where: {
+                        id: req.params.id
+                    },
+                    include: {
+                        department: { select: { title: true } },
+                        student: { select: { _count: true } }
+                    }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchProgramStructure(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.findUnique({
+                    where: { id: req.params.id },
+                    include: {
+                        structure: { orderBy: { semesterNum: 'asc' } }
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchProgramStudents(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.findUnique({
+                    where: { id: req.params.id },
+                    include: {
+                        student: { select: { _count: true } }
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchProgramStatistics(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.findUnique({
+                    where: {
+                        id: req.params.id
+                    },
+                    include: {
+                        department: { select: { title: true } },
+                    }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    postProgram(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.create({
+                    data: Object.assign({}, req.body),
+                    include: {
+                        department: { select: { title: true } },
+                        student: { select: { _count: true } }
+                    }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    updateProgram(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.update({
+                    where: {
+                        id: req.params.id
+                    },
+                    data: Object.assign({}, req.body)
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    deleteProgram(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.program.delete({
+                    where: { id: req.params.id }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Departments */
+    fetchDepartments(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.unit.findMany({
+                    where: { status: true, levelNum: 2, type: 'ACADEMIC' },
+                    include: {
+                        level1: { select: { title: true, code: true } }
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Faculties */
+    fetchFaculties(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.unit.findMany({
+                    where: { status: true, levelNum: 1, type: 'ACADEMIC' },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Units */
+    fetchUnits(req, res) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            const { page = 1, pageSize = 6, keyword = '' } = req.query;
+            const offset = (page - 1) * pageSize;
+            let searchCondition = {};
+            try {
+                if (keyword)
+                    searchCondition = {
+                        where: {
+                            OR: [
+                                { title: { contains: keyword } },
+                                { id: { contains: keyword } },
+                            ],
+                        },
+                        include: {
+                            level1: { select: { title: true, code: true } }
+                        },
+                    };
+                const resp = yield ais.$transaction([
+                    ais.unit.count(Object.assign({}, (searchCondition))),
+                    ais.unit.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize) }))
+                ]);
+                if (resp && ((_a = resp[1]) === null || _a === void 0 ? void 0 : _a.length)) {
+                    res.status(200).json({
+                        totalPages: (_b = Math.ceil(resp[0] / pageSize)) !== null && _b !== void 0 ? _b : 0,
+                        totalData: (_c = resp[1]) === null || _c === void 0 ? void 0 : _c.length,
+                        data: resp[1],
+                    });
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchUnit(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.unit.findUnique({
+                    where: {
+                        id: req.params.id
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    postUnit(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.unit.create({
+                    data: Object.assign({}, req.body),
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    updateUnit(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.unit.update({
+                    where: {
+                        id: req.params.id
+                    },
+                    data: Object.assign({}, req.body)
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    deleteUnit(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.unit.delete({
+                    where: { id: req.params.id }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Helpers */
+    fetchCountries(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.country.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchRegions(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.region.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchReligions(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.religion.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchDisabilities(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.disability.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchTitles(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.title.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
                 }
             }
             catch (error) {

@@ -51,8 +51,8 @@ enum unitType {
 }
 
 enum semesterNumbers {
-  SEM1 
-  SEM2
+  SEM1 @map("1")
+  SEM2 @map("2")
 }
 
 
@@ -231,6 +231,7 @@ model country {
 
 model region {
   id String @id @default(uuid())
+  tag String @db.VarChar(50)
   title String @db.VarChar(255)
   status Boolean @default(true)
   createdAt DateTime @default(now())
@@ -439,7 +440,7 @@ model student {
   dob DateTime? @db.DateTime(3)
   email String? @db.VarChar(255)
   phone String? @db.VarChar(20)
-  hometowm String? @db.VarChar(255)
+  hometown String? @db.VarChar(255)
   address String? @db.VarChar(350)
   guardianName String? @db.VarChar(350)
   guardianPhone String? @db.VarChar(15)
@@ -533,9 +534,9 @@ model session {
 
 model structure {
   id String @id @default(uuid())
-  unitId String 
+  unitId String?
   programId String 
-  majorId String 
+  majorId String? 
   courseId String 
   semesterNum Int 
   type courseType 

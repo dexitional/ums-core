@@ -120,6 +120,7 @@ exports.Prisma.CountryScalarFieldEnum = {
 
 exports.Prisma.RegionScalarFieldEnum = {
   id: 'id',
+  tag: 'tag',
   title: 'title',
   status: 'status',
   createdAt: 'createdAt',
@@ -255,7 +256,7 @@ exports.Prisma.StudentScalarFieldEnum = {
   dob: 'dob',
   email: 'email',
   phone: 'phone',
-  hometowm: 'hometowm',
+  hometown: 'hometown',
   address: 'address',
   guardianName: 'guardianName',
   guardianPhone: 'guardianPhone',

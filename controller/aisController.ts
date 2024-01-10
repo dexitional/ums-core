@@ -15,7 +15,6 @@ const sha1 = require('sha1');
 export default class AisController {
      
      /* Student */
-
      async fetchStudents(req: Request,res: Response) {
         const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
         const offset = (page - 1) * pageSize;
@@ -44,6 +43,9 @@ export default class AisController {
                   include: { 
                      title:{ select: { label: true }},
                      country:{ select: { longName: true }},
+                     region:{ select: { title: true }},
+                     religion:{ select: { title: true }},
+                     disability:{ select: { title: true }},
                      program:{
                       select:{
                         longName:true,
@@ -78,6 +80,9 @@ export default class AisController {
                include: { 
                   title:{ select: { label: true }},
                   country:{ select: { longName: true }},
+                  region:{ select: { title: true }},
+                  religion:{ select: { title: true }},
+                  disability:{ select: { title: true }},
                   program:{
                      select:{
                        longName:true,
@@ -189,14 +194,6 @@ export default class AisController {
          const resp = await ais.student.create({
             data: {
                ...req.body,
-            },
-            include: { 
-               country:true,
-               program:{
-                  select:{
-                    longName:true
-                  }
-               },
             }
          })
          if(resp){
@@ -213,12 +210,21 @@ export default class AisController {
 
      async updateStudent(req: Request,res: Response) {
        try {
+          const { titleId,programId,countryId,regionId,religionId,disabilityId } = req.body
+          delete req.body.titleId;    delete req.body.programId;
+          delete req.body.countryId;  delete req.body.regionId;
+          delete req.body.religionId; delete req.body.disabilityId;
+          
           const resp = await ais.student.update({
-            where: { 
-              id: req.params.id 
-            },
+            where: { id: req.params.id },
             data: {
-              ...req.body,
+              ... req.body,
+              ... programId && ({ program: { connect: { id: programId }}}),
+              ... titleId && ({ title: { connect: { id:titleId }}}),
+              ... countryId && ({ country: { connect: { id:countryId }}}),
+              ... regionId && ({ region: { connect: { id:regionId }}}),
+              ... religionId && ({ religion: { connect: { id:religionId }}}),
+              ... disabilityId && ({ disability: { connect: { id:disabilityId }}}),
             }
           })
           if(resp){
@@ -246,7 +252,569 @@ export default class AisController {
           console.log(error)
           return res.status(500).json({ message: error.message }) 
       }
+     }
+
+
+     /* Courses */
+     async fetchCourses(req: Request,res: Response) {
+      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+             OR: [
+                { title: { contains: keyword } },
+                { id: { contains: keyword } },
+             ],
+            }
+          }
+          const resp = await ais.$transaction([
+             ais.course.count({
+                ...(searchCondition),
+             }),
+             ais.course.findMany({
+                ...(searchCondition),
+                skip: offset,
+                take: Number(pageSize),
+             })
+          ]);
+         
+          if(resp && resp[1]?.length){
+            res.status(200).json({
+                totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+                totalData: resp[1]?.length,
+                data: resp[1],
+            })
+          } else {
+            res.status(204).json({ message: `no records found` })
+          }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchCourse(req: Request,res: Response) {
+         try {
+            const resp = await ais.course.findUnique({
+               where: { 
+                  id: req.params.id 
+               },
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async postCourse(req: Request,res: Response) {
+     try {
+      
+       const resp = await ais.course.create({
+          data: {
+             ...req.body,
+          },
+       })
+       if(resp){
+          res.status(200).json(resp)
+       } else {
+          res.status(204).json({ message: `no records found` })
+       }
+       
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async updateCourse(req: Request,res: Response) {
+     try {
+        const resp = await ais.course.update({
+          where: { 
+            id: req.params.id 
+          },
+          data: {
+            ...req.body,
+          }
+        })
+        if(resp){
+          res.status(200).json(resp)
+        } else {
+          res.status(204).json({ message: `No records found` })
+        }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async deleteCourse(req: Request,res: Response) {
+    try {
+       const resp = await ais.course.delete({
+         where: {  id: req.params.id  }
+       })
+       if(resp){
+         res.status(200).json(resp)
+       } else {
+         res.status(204).json({ message: `No records found` })
+       }
+    } catch (error: any) {
+        console.log(error)
+        return res.status(500).json({ message: error.message }) 
     }
+     }
+
+  /* programs */
+  async fetchProgramList(req: Request,res: Response) {
+      try {
+         const resp = await ais.program.findMany({
+            where: { status: true },
+            include: { 
+            department:{ select: { title: true }},
+            }, 
+         })
+         if(resp){
+         res.status(200).json(resp)
+         } else {
+         res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchPrograms(req: Request,res: Response) {
+      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+             OR: [
+                { code: { contains: keyword } },
+                { shortName: { contains: keyword } },
+                { longName: { contains: keyword } },
+                { prefix: { contains: keyword } },
+               ],
+            }
+          }
+          const resp = await ais.$transaction([
+             ais.program.count({
+                ...(searchCondition),
+             }),
+             ais.program.findMany({
+                ...(searchCondition),
+                skip: offset,
+                take: Number(pageSize),
+                include: { 
+                  department:{ select:{ title:true }},
+                  student:{ select: { _count: true }}
+                }
+             })
+          ]);
+         
+          if(resp && resp[1]?.length){
+            res.status(200).json({
+                totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+                totalData: resp[1]?.length,
+                data: resp[1],
+            })
+          } else {
+            res.status(204).json({ message: `no records found` })
+          }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchProgram(req: Request,res: Response) {
+       try {
+          const resp = await ais.program.findUnique({
+             where: { 
+                 id: req.params.id 
+             },
+             include: { 
+               department:{ select:{ title:true }},
+               student:{ select: { _count: true }}
+             }
+          })
+          if(resp){
+            res.status(200).json(resp)
+          } else {
+            res.status(204).json({ message: `no record found` })
+          }
+       } catch (error: any) {
+          console.log(error)
+          return res.status(500).json({ message: error.message }) 
+       }
+   }
+
+   async fetchProgramStructure(req: Request,res: Response) {
+      try {
+         const resp = await ais.program.findUnique({
+            where: { id: req.params.id },
+            include: { 
+             structure:{ orderBy: { semesterNum:'asc' }}
+           }, 
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+     
+   async fetchProgramStudents(req: Request,res: Response) {
+       try {
+          const resp = await ais.program.findUnique({
+             where: { id: req.params.id },
+             include: { 
+              student:{ select: { _count: true }}
+             }, 
+          })
+          if(resp){
+             res.status(200).json(resp)
+          } else {
+             res.status(204).json({ message: `no record found` })
+          }
+       } catch (error: any) {
+          console.log(error)
+          return res.status(500).json({ message: error.message }) 
+       }
+   }
+
+   async fetchProgramStatistics(req: Request,res: Response) {
+       try {
+          const resp = await ais.program.findUnique({
+             where: { 
+                id: req.params.id 
+             },
+             include: { 
+              department:{ select:{ title:true }},
+             }
+          })
+          if(resp){
+          res.status(200).json(resp)
+          } else {
+          res.status(204).json({ message: `no record found` })
+          }
+       } catch (error: any) {
+          console.log(error)
+          return res.status(500).json({ message: error.message }) 
+       }
+   }
+
+   async postProgram(req: Request,res: Response) {
+     try {
+      
+       const resp = await ais.program.create({
+          data: {
+             ...req.body,
+          },
+          include: { 
+            department:{ select:{ title:true }},
+            student:{ select: { _count: true }}
+          }
+       })
+       if(resp){
+          res.status(200).json(resp)
+       } else {
+          res.status(204).json({ message: `no records found` })
+       }
+       
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async updateProgram(req: Request,res: Response) {
+     try {
+        const resp = await ais.program.update({
+          where: { 
+            id: req.params.id 
+          },
+          data: {
+            ...req.body,
+          }
+        })
+        if(resp){
+          res.status(200).json(resp)
+        } else {
+          res.status(204).json({ message: `No records found` })
+        }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async deleteProgram(req: Request,res: Response) {
+      try {
+         const resp = await ais.program.delete({
+            where: {  id: req.params.id  }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+
+     /* Departments */
+     async fetchDepartments(req: Request,res: Response) {
+      try {
+         const resp = await ais.unit.findMany({
+            where: { status: true, levelNum: 2, type: 'ACADEMIC' },
+            include: { 
+               level1:{ select: { title: true, code: true }}
+             }, 
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     /* Faculties */
+     async fetchFaculties(req: Request,res: Response) {
+      try {
+         const resp = await ais.unit.findMany({
+            where: { status: true, levelNum: 1, type: 'ACADEMIC' },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     /* Units */
+     async fetchUnits(req: Request,res: Response) {
+         const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+         const offset = (page - 1) * pageSize;
+         let searchCondition = { }
+         try {
+            if(keyword) searchCondition = { 
+               where: { 
+                  OR: [
+                     { title: { contains: keyword } },
+                     { id: { contains: keyword } },
+                  ],
+               },
+               include: { 
+                  level1:{ select: { title: true, code: true }}
+               }, 
+            }
+            const resp = await ais.$transaction([
+               ais.unit.count({
+                  ...(searchCondition),
+               }),
+               ais.unit.findMany({
+                  ...(searchCondition),
+                  skip: offset,
+                  take: Number(pageSize),
+               })
+            ]);
+            
+            if(resp && resp[1]?.length){
+               res.status(200).json({
+                  totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+                  totalData: resp[1]?.length,
+                  data: resp[1],
+               })
+            } else {
+               res.status(204).json({ message: `no records found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async fetchUnit(req: Request,res: Response) {
+         try {
+            const resp = await ais.unit.findUnique({
+               where: { 
+                  id: req.params.id 
+               },
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async postUnit(req: Request,res: Response) {
+      try {
+            const resp = await ais.unit.create({
+               data: {
+                  ...req.body,
+               },
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no records found` })
+            }
+            
+         } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async updateUnit(req: Request,res: Response) {
+         try {
+            const resp = await ais.unit.update({
+               where: { 
+                  id: req.params.id 
+               },
+               data: {
+                  ...req.body,
+               }
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `No records found` })
+            }
+         } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async deleteUnit(req: Request,res: Response) {
+         try {
+            const resp = await ais.unit.delete({
+               where: {  id: req.params.id  }
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `No records found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     /* Helpers */
+     async fetchCountries(req: Request,res: Response) {
+      try {
+         const resp = await ais.country.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchRegions(req: Request,res: Response) {
+      try {
+         const resp = await ais.region.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchReligions(req: Request,res: Response) {
+      try {
+         const resp = await ais.religion.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchDisabilities(req: Request,res: Response) {
+      try {
+         const resp = await ais.disability.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchTitles(req: Request,res: Response) {
+      try {
+         const resp = await ais.title.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+
+
 
 
 
