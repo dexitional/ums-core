@@ -205,7 +205,10 @@ enum AccountType {
   PIN
 }
 
-
+enum residentialStatus {
+  RESIDENTIAL
+  NON_RESIDENTIAL
+}
 
 
 
@@ -460,6 +463,7 @@ model student {
   entryGroup entryGroup? @default(GH)
   entryDate DateTime? @db.DateTime
   exitDate DateTime? @db.DateTime
+  residentialStatus residentialStatus?
   deferStatus Boolean @default(false)
   completeStatus Boolean @default(false)
   completeType completeType?

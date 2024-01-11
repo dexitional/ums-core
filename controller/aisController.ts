@@ -190,11 +190,21 @@ export default class AisController {
 
      async postStudent(req: Request,res: Response) {
        try {
-        
+         const { titleId,programId,countryId,regionId,religionId,disabilityId } = req.body
+         delete req.body.titleId;    delete req.body.programId;
+         delete req.body.countryId;  delete req.body.regionId;
+         delete req.body.religionId; delete req.body.disabilityId;
+         
          const resp = await ais.student.create({
-            data: {
-               ...req.body,
-            }
+           data: {
+             ... req.body,
+             ... programId && ({ program: { connect: { id: programId }}}),
+             ... titleId && ({ title: { connect: { id:titleId }}}),
+             ... countryId && ({ country: { connect: { id:countryId }}}),
+             ... regionId && ({ region: { connect: { id:regionId }}}),
+             ... religionId && ({ religion: { connect: { id:religionId }}}),
+             ... disabilityId && ({ disability: { connect: { id:disabilityId }}}),
+           }
          })
          if(resp){
             res.status(200).json(resp)
@@ -257,7 +267,7 @@ export default class AisController {
 
      /* Courses */
      async fetchCourses(req: Request,res: Response) {
-      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
       const offset = (page - 1) * pageSize;
       let searchCondition = { }
       try {
@@ -370,6 +380,137 @@ export default class AisController {
     }
      }
 
+
+     /* Schemes */
+     async fetchSchemes(req: Request,res: Response) {
+         const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
+         const offset = (page - 1) * pageSize;
+         let searchCondition = { }
+         try {
+            if(keyword) searchCondition = { 
+               where: { 
+               OR: [
+                  { title: { contains: keyword } },
+               ],
+               }
+            }
+            const resp = await ais.$transaction([
+               ais.scheme.count({
+                  ...(searchCondition),
+               }),
+               ais.scheme.findMany({
+                  ...(searchCondition),
+                  skip: offset,
+                  take: Number(pageSize),
+               })
+            ]);
+            
+            if(resp && resp[1]?.length){
+               res.status(200).json({
+                  totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+                  totalData: resp[1]?.length,
+                  data: resp[1],
+               })
+            } else {
+               res.status(204).json({ message: `no records found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async fetchSchemeList(req: Request,res: Response) {
+         try {
+            const resp = await ais.scheme.findMany({
+               where: { status: true },
+            })
+            if(resp){
+            res.status(200).json(resp)
+            } else {
+            res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async fetchScheme(req: Request,res: Response) {
+         try {
+            const resp = await ais.scheme.findUnique({
+               where: { 
+                  id: req.params.id 
+               },
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async postScheme(req: Request,res: Response) {
+      try {
+         
+         const resp = await ais.scheme.create({
+            data: {
+               ...req.body,
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+         
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async updateScheme(req: Request,res: Response) {
+      try {
+         const resp = await ais.scheme.update({
+            where: { 
+               id: req.params.id 
+            },
+            data: {
+               ...req.body,
+            }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async deleteScheme(req: Request,res: Response) {
+         try {
+            const resp = await ais.scheme.delete({
+               where: {  id: req.params.id  }
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `No records found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
   /* programs */
   async fetchProgramList(req: Request,res: Response) {
       try {
@@ -462,11 +603,31 @@ export default class AisController {
          const resp = await ais.program.findUnique({
             where: { id: req.params.id },
             include: { 
-             structure:{ orderBy: { semesterNum:'asc' }}
+              structure:{ 
+                select: {
+                  id: true,
+                  type: true,
+                  semesterNum: true,
+                  course: { select: { title: true, creditHour: true, id: true,practicalHour:true, theoryHour: true }}
+                },
+                orderBy: { semesterNum:'asc' }
+              }
            }, 
          })
-         if(resp){
-            res.status(200).json(resp)
+         if(resp?.structure?.length){
+            var mdata:any = new Map();
+            for(const sv of resp?.structure){
+               const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` ?? 'none';
+               const zd = { ...sv, course: sv?.course?.title, code: sv?.course?.id, credit: sv?.course?.creditHour, practical: sv?.course?.practicalHour, theory: sv?.course?.theoryHour, type: sv?.type }
+               // Data By Level - Semester
+               if(mdata.has(index)){
+                 mdata.set(index, [...mdata.get(index), { ...zd }])
+               }else{
+                  mdata.set(index,[{ ...zd }])
+               }
+            }
+            console.log(Array.from(mdata))
+            res.status(200).json(Array.from(mdata))
          } else {
             res.status(204).json({ message: `no record found` })
          }
@@ -481,11 +642,37 @@ export default class AisController {
           const resp = await ais.program.findUnique({
              where: { id: req.params.id },
              include: { 
-              student:{ select: { _count: true }}
+               student:{ 
+                  where: { completeStatus: false },
+                  select: {
+                     id: true,
+                     indexno: true,
+                     fname: true,
+                     mname: true,
+                     lname: true,
+                     gender: true,
+                     semesterNum: true,
+                     residentialStatus: true,
+                     deferStatus: true,
+                  },
+                  orderBy: { semesterNum:'asc' }
+               }
              }, 
           })
-          if(resp){
-             res.status(200).json(resp)
+          if(resp?.student?.length){
+               var mdata:any = new Map();
+               for(const sv of resp?.student){
+                  const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}` ?? 'none';
+                  const zd = { ...sv }
+                  // Data By Level - Semester
+                  if(mdata.has(index)){
+                     mdata.set(index, [...mdata.get(index), { ...zd }])
+                  }else{
+                     mdata.set(index,[{ ...zd }])
+                  }
+               }
+             console.log(Array.from(mdata))
+             res.status(200).json(Array.from(mdata))
           } else {
              res.status(204).json({ message: `no record found` })
           }
@@ -518,15 +705,15 @@ export default class AisController {
 
    async postProgram(req: Request,res: Response) {
      try {
-      
+       const { unitId,schemeId } = req.body
+       delete req.body.schemeId;    delete req.body.unitId;
+       
        const resp = await ais.program.create({
-          data: {
-             ...req.body,
-          },
-          include: { 
-            department:{ select:{ title:true }},
-            student:{ select: { _count: true }}
-          }
+         data: {
+           ... req.body,
+           ... unitId && ({ department: { connect: { id: unitId }}}),
+           ... schemeId && ({ scheme: { connect: { id:schemeId }}}),
+         }
        })
        if(resp){
           res.status(200).json(resp)
@@ -542,13 +729,16 @@ export default class AisController {
 
    async updateProgram(req: Request,res: Response) {
      try {
-        const resp = await ais.program.update({
-          where: { 
-            id: req.params.id 
-          },
-          data: {
-            ...req.body,
-          }
+         const { unitId,schemeId } = req.body
+         delete req.body.schemeId;    delete req.body.unitId;
+         console.log(req.body)
+         const resp = await ais.program.update({
+         where: { id: req.params.id },
+         data: {
+            ... req.body,
+            ... unitId && ({ department: { connect: { id: unitId }}}),
+            ... schemeId && ({ scheme: { connect: { id:schemeId }}}),
+         }
         })
         if(resp){
           res.status(200).json(resp)
@@ -584,7 +774,13 @@ export default class AisController {
          const resp = await ais.unit.findMany({
             where: { status: true, levelNum: 2, type: 'ACADEMIC' },
             include: { 
-               level1:{ select: { title: true, code: true }}
+               level1:{ select: { title: true, code: true }},
+               _count: { 
+                  select: {
+                     staff:true,
+                     program: true
+                  }
+               },
              }, 
          })
          if(resp){
@@ -603,7 +799,18 @@ export default class AisController {
       try {
          const resp = await ais.unit.findMany({
             where: { status: true, levelNum: 1, type: 'ACADEMIC' },
+            include: { 
+               levelone: { select: { _count: { select: { program: true } }}},
+               _count: { 
+                  select: {
+                     staff:true,
+                     levelone: true
+                  }
+               },
+             }, 
          })
+         console.log(resp)
+         
          if(resp){
            res.status(200).json(resp)
          } else {

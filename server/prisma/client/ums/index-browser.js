@@ -16,12 +16,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 5.3.1
- * Query Engine version: 0ca5ccbcfa6bdc81c003cf549abe4269f59c41e5
+ * Prisma Client JS version: 5.8.0
+ * Query Engine version: 0a83d8541752d7582de2ebc1ece46519ce72a848
  */
 Prisma.prismaVersion = {
-  client: "5.3.1",
-  engine: "0ca5ccbcfa6bdc81c003cf549abe4269f59c41e5"
+  client: "5.8.0",
+  engine: "0a83d8541752d7582de2ebc1ece46519ce72a848"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -276,6 +276,7 @@ exports.Prisma.StudentScalarFieldEnum = {
   entryGroup: 'entryGroup',
   entryDate: 'entryDate',
   exitDate: 'exitDate',
+  residentialStatus: 'residentialStatus',
   deferStatus: 'deferStatus',
   completeStatus: 'completeStatus',
   completeType: 'completeType',
@@ -1258,6 +1259,11 @@ exports.programCategory = exports.$Enums.programCategory = {
 exports.entryGroup = exports.$Enums.entryGroup = {
   GH: 'GH',
   INT: 'INT'
+};
+
+exports.residentialStatus = exports.$Enums.residentialStatus = {
+  RESIDENTIAL: 'RESIDENTIAL',
+  NON_RESIDENTIAL: 'NON_RESIDENTIAL'
 };
 
 exports.completeType = exports.$Enums.completeType = {
