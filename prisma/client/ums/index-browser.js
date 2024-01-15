@@ -277,6 +277,7 @@ exports.Prisma.StudentScalarFieldEnum = {
   entryDate: 'entryDate',
   exitDate: 'exitDate',
   residentialStatus: 'residentialStatus',
+  studyMode: 'studyMode',
   deferStatus: 'deferStatus',
   completeStatus: 'completeStatus',
   completeType: 'completeType',
@@ -291,6 +292,7 @@ exports.Prisma.StudentScalarFieldEnum = {
 
 exports.Prisma.SessionScalarFieldEnum = {
   id: 'id',
+  tag: 'tag',
   title: 'title',
   year: 'year',
   semester: 'semester',
@@ -505,8 +507,8 @@ exports.Prisma.ResessionScalarFieldEnum = {
 exports.Prisma.ResitScalarFieldEnum = {
   id: 'id',
   resitSessionId: 'resitSessionId',
-  trailSessionId: 'trailSessionId',
   registerSessionId: 'registerSessionId',
+  trailSessionId: 'trailSessionId',
   schemeId: 'schemeId',
   courseId: 'courseId',
   indexno: 'indexno',
@@ -1264,6 +1266,12 @@ exports.entryGroup = exports.$Enums.entryGroup = {
 exports.residentialStatus = exports.$Enums.residentialStatus = {
   RESIDENTIAL: 'RESIDENTIAL',
   NON_RESIDENTIAL: 'NON_RESIDENTIAL'
+};
+
+exports.studyMode = exports.$Enums.studyMode = {
+  M: 'M',
+  W: 'W',
+  E: 'E'
 };
 
 exports.completeType = exports.$Enums.completeType = {

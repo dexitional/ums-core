@@ -266,6 +266,20 @@ export default class AisController {
 
 
      /* Courses */
+     async fetchCourseList(req: Request,res: Response) {
+      try {
+         const resp = await ais.course.findMany({ where: { status: true }, orderBy: { title:'asc' } })
+         if(resp){
+         res.status(200).json(resp)
+         } else {
+         res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
      async fetchCourses(req: Request,res: Response) {
       const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
       const offset = (page - 1) * pageSize;
@@ -381,6 +395,154 @@ export default class AisController {
      }
 
 
+     /* Structure & Curriculum */
+     async fetchCurriculums(req: Request,res: Response) {
+      const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+            OR: [
+               {courseId: { contains: keyword }},
+               { unit: { title: {contains: keyword } } },
+               { program: { longName: {contains: keyword } } },
+               { course: { title: {contains: keyword } } },
+            ],
+            }
+         }
+         const resp = await ais.$transaction([
+            ais.structure.count({
+               ...(searchCondition),
+            }),
+            ais.structure.findMany({
+               ...(searchCondition),
+               skip: offset,
+               take: Number(pageSize),
+               include: {
+                  unit: { select: { title: true }},
+                  program: { select: { longName: true }},
+                  course: { select: { title: true }},
+               }
+            })
+         ]);
+         
+         if(resp && resp[1]?.length){
+            res.status(200).json({
+               totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+               totalData: resp[1]?.length,
+               data: resp[1],
+            })
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchCurriculumList(req: Request,res: Response) {
+            try {
+               const resp = await ais.structure.findMany({
+                  where: { status: true },
+               })
+               if(resp){
+               res.status(200).json(resp)
+               } else {
+               res.status(204).json({ message: `no record found` })
+               }
+            } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+            }
+      }
+
+      async fetchCurriculum(req: Request,res: Response) {
+            try {
+               const resp = await ais.structure.findUnique({
+                  where: { 
+                     id: req.params.id 
+                  },
+               })
+               if(resp){
+                  res.status(200).json(resp)
+               } else {
+                  res.status(204).json({ message: `no record found` })
+               }
+            } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+            }
+      }
+
+      async postCurriculum(req: Request,res: Response) {
+         try {
+            const { unitId,programId,courseId } = req.body
+               delete req.body.courseId; delete req.body.programId;
+               delete req.body.unitId;
+               const resp = await ais.structure.create({
+               data: {
+                  ... req.body,
+                  ... programId && ({ program: { connect: { id: programId }}}),
+                  ... courseId && ({ course: { connect: { id:courseId }}}),
+                  ... unitId && ({ unit: { connect: { id:unitId }}}),
+               }
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no records found` })
+            }
+            
+            } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+            }
+      }
+
+      async updateCurriculum(req: Request,res: Response) {
+         try {
+            const { unitId,programId,courseId } = req.body
+               delete req.body.courseId; delete req.body.programId;
+               delete req.body.unitId;
+               const resp = await ais.structure.update({
+               where: { id: req.params.id },
+               data: {
+                  ... req.body,
+                  ... programId && ({ program: { connect: { id: programId }}}),
+                  ... courseId && ({ course: { connect: { id:courseId }}}),
+                  ... unitId && ({ unit: { connect: { id:unitId }}}),
+               }
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `No records found` })
+            }
+            } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+            }
+      }
+
+      async deleteCurriculum(req: Request,res: Response) {
+            try {
+               const resp = await ais.structure.delete({
+                  where: {  id: req.params.id  }
+               })
+               if(resp){
+                  res.status(200).json(resp)
+               } else {
+                  res.status(204).json({ message: `No records found` })
+               }
+            } catch (error: any) {
+               console.log(error)
+               return res.status(500).json({ message: error.message }) 
+            }
+      }
+
+
      /* Schemes */
      async fetchSchemes(req: Request,res: Response) {
          const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
@@ -402,6 +564,11 @@ export default class AisController {
                   ...(searchCondition),
                   skip: offset,
                   take: Number(pageSize),
+                  include:{
+                     _count: {
+                        select: { program: true }
+                     }
+                  }
                })
             ]);
             
@@ -442,6 +609,7 @@ export default class AisController {
                where: { 
                   id: req.params.id 
                },
+               include:{ program: true }
             })
             if(resp){
                res.status(200).json(resp)
@@ -509,7 +677,335 @@ export default class AisController {
             console.log(error)
             return res.status(500).json({ message: error.message }) 
          }
-     }
+   }
+
+
+   /* Registrations */
+   async fetchRegistrationList(req: Request,res: Response) {
+      try {
+         const resp = await ais.activityRegister.findMany({
+            where: { session: { default : true }},
+            orderBy: { createdAt: 'desc' },
+            include: { 
+               student:{
+                 select: {
+                   fname: true, mname: true, lname: true,
+                   semesterNum: true, id: true,
+                   program: { select: { longName: true }}
+                 }
+               }
+            }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchRegistrations(req: Request,res: Response) {
+      const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+               session: { default : true },
+               OR: [
+                  { indexno: { contains: keyword } },
+                  { student: { fname: { contains: keyword }} },
+                  { student: { mname: { contains: keyword }} },
+                  { student: { lname: { contains: keyword }} },
+                  { student: { id: { contains: keyword }} },
+                  { student: { program: { longName: { contains: keyword }}} },
+               ],
+            }
+         }
+         const resp = await ais.$transaction([
+            ais.activityRegister.count({
+               ...(searchCondition),
+            }),
+            ais.activityRegister.findMany({
+               ...(searchCondition),
+               skip: offset,
+               take: Number(pageSize),
+               orderBy: { createdAt: 'desc' },
+               include: { 
+                  student:{
+                     select: {
+                        fname: true, mname: true, lname: true,
+                        semesterNum: true, id: true,
+                        program: { select: { longName: true }}
+                     }
+                  }
+               }
+            })
+         ]);
+         
+         if(resp && resp[1]?.length){
+            res.status(200).json({
+               totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+               totalData: resp[1]?.length,
+               data: resp[1],
+            })
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async fetchRegistration(req: Request,res: Response) {
+      try {
+         const resp = await ais.assessment.findMany({
+            include: { 
+               course: { select: { title: true, creditHour: true }},
+               student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true }} }},
+            },
+            where: { 
+               indexno: req.params.indexno,
+               session: { default: true }
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async fetchRegistrationMount(req: Request,res: Response) {
+      try {
+         const courses:any = [];
+         const id = req.params.indexno;
+         // Get Student Info
+         const student:any = await ais.student.findUnique({ include:{ program: { select: { schemeId: true }}}, where : { id }})
+         const indexno = student?.indexno;
+         // Get Active Sessions Info
+         const sessions:any = await ais.session.findMany({ where : { default: true }})
+         // Get Session, If Student is Main(Sept)/Sub(Jan) for AUCC Only
+         const session:any = sessions.find((row: any) => (moment(student?.entryDate).format("MM") == '01' && student?.entrySemesterNum <= 2) ? row.tag == 'sub': row.tag == 'main')
+         // Get Normal Courses with/without Majors
+         const maincourses = await ais.structure.findMany({
+            include: { course: { select: { title: true, creditHour: true }}},
+            where: {  programId: student?.programId, semesterNum: student?.semesterNum },
+            orderBy: { type:'asc'}
+         })
+         // Meta & Instructions
+         const meta = await ais.structmeta.findFirst({
+            where: {  programId: student?.programId, semesterNum: student?.semesterNum },
+         })
+         if(student && maincourses.length){
+            for(const course of maincourses){
+               courses.push({
+                  code: course.courseId,
+                  course: course?.course?.title,
+                  credit: course?.course?.creditHour,
+                  type: course?.type,
+                  lock: course?.lock,
+                  sessionId: session?.id,
+                  schemeId: student?.program?.schemeId,
+                  semesterNum: student?.semesterNum,
+                  indexno
+               })
+            }
+         }
+         // Get Resit Courses
+         const resitcourses:any = await ais.resit.findMany({ 
+            include: { course: { select: { title: true, creditHour: true }}},
+            where : { indexno, taken: false,trailSession: { semester: session.semesterNum },
+         }})
+         if(student && resitcourses.length){
+            for(const course of resitcourses){
+               courses.push({
+                  code: course.courseId,
+                  course: course?.course?.title,
+                  credit: course?.course?.creditHour,
+                  type: 'R',
+                  lock: false,
+                  sessionId: session.id,
+                  schemeId: student?.program?.schemeId,
+                  semesterNum: student.semesterNum,
+                  indexno
+               })
+            }
+         }
+         if(courses.length){
+            res.status(200).json({ courses, meta })
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async postRegistration(req: Request,res: Response) {
+      try {
+         const courses = req.body;
+         const data:any = [], rdata:any = [];
+         const slip = await ais.assessment.findMany({ where: { indexno: req.params.indexno, session: { default: true }} });
+         if(slip.length) throw("Registration already submitted!")
+         
+         const resitcourses = courses.filter((row:any) => row.type == 'R')
+         const maincourses = courses.filter((row:any) => row.type != 'R')
+         if(maincourses.length){
+            for(const course of maincourses){
+               data.push({
+                  courseId: course.code,
+                  sessionId: course.sessionId,
+                  schemeId: course.schemeId,
+                  credit: course.credit,
+                  semesterNum: course.semesterNum,
+                  indexno: course.indexno,
+                  totalScore: 0,
+                  type:'N'
+               })
+            }
+         }
+         if(resitcourses.length){
+            // Resit Session Info
+            const rsession:any = await ais.resession.findFirst({ where: { default: true }})
+            // Save Resit Registration
+            for(const course of resitcourses){
+               const ups = await ais.resit.updateMany({
+                  where:  {
+                     indexno: course?.indexno,
+                     courseId: course?.code,
+                     taken: false
+                  },
+                  data: {
+                     registerSessionId: course?.sessionId,
+                     resitSessionId: rsession?.id,
+                     taken: true
+                  }
+               })
+               if(ups) rdata.push(ups);
+            }
+         }
+         // Log Registration
+         const activityresp = await ais.activityRegister.create({ data : {
+            indexno: maincourses[0].indexno,
+            sessionId: maincourses[0].sessionId,
+            courses: courses?.length,
+            credits: courses?.reduce((sum:number,cur:any) => sum+cur.credit,0)
+         }})
+         // Save Registration Courses
+         const mainresp = await ais.assessment.createMany({ data })
+         if(mainresp){
+           res.status(200).json({ courses: mainresp, resits: rdata })
+         } else {
+           res.status(204).json({ message: `no records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(202).json({ message: error }) 
+      }
+   }
+
+
+  async updateRegistration(req: Request,res: Response) {
+      try {
+         const indexno = req.params.indexno;
+         const courses = req.body;
+         const data:any = [], rdata:any = [];
+         const resitcourses = courses.filter((row:any) => row.type == 'R')
+         const maincourses = courses.filter((row:any) => row.type != 'R')
+         if(maincourses.length){
+            for(const course of maincourses){
+               data.push({
+                  courseId: course.courseId,
+                  sessionId: course.sessionId,
+                  schemeId: course.schemeId,
+                  credit: course.credit,
+                  semesterNum: course.semesterNum,
+                  indexno,
+                  totalScore: 0
+               })
+            }
+         }
+
+         if(resitcourses.length){
+            for(const course of resitcourses){
+               const ups = await ais.resit.updateMany({
+               where:  {
+                  indexno,
+                  courseId: course.courseId,
+                  taken: false
+               },
+               data: {
+                  registerSessionId: course.sessionId,
+                  resitSessionId: course.sessionId,
+                  taken: true
+               }
+               })
+               if(ups) rdata.push(ups);
+            }
+         }
+
+         const mainresp = await ais.assessment.createMany({ data })
+         if(mainresp){
+            res.status(200).json({ courses: mainresp, resits: rdata })
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+         
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+ 
+  async deleteRegistration(req: Request,res: Response) {
+      try {
+         // Delete Courses Registration
+         const resp = await ais.assessment.deleteMany({
+            where: {  
+               indexno: req.params.indexno,  
+               session: { default: true }
+            }
+         })
+         // Delete Registration Log
+         const log = await ais.activityRegister.deleteMany({
+            where: {  
+               indexno: req.params.indexno,  
+               session: { default: true }
+            }
+         })
+         // Reset Resit Registration
+         const resit = await ais.resit.updateMany({
+            where: {  
+               indexno: req.params.indexno,  
+               registerSession: { default: true }
+            },
+            data: {
+               taken:false,
+               resitSessionId:null,
+               registerSessionId:null,
+            }
+         })
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+}
 
   /* programs */
   async fetchProgramList(req: Request,res: Response) {

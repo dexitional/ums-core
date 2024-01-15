@@ -34,6 +34,7 @@ class AisRoute {
      
       /* Course */
       this.router.get('/courses', this.controller.fetchCourses);
+      this.router.get('/courses/list', this.controller.fetchCourseList);
       this.router.get('/courses/:id', this.controller.fetchCourse);
       this.router.post('/courses', this.controller.postCourse);
       this.router.patch('/courses/:id', this.controller.updateCourse);
@@ -48,12 +49,20 @@ class AisRoute {
       this.router.delete('/schemes/:id', this.controller.deleteScheme);
       
       // /* Curriculum */
-      // this.router.get('/curriculums', this.controller.fetchCurriculums);
-      // this.router.get('/curriculums/:id', this.controller.fetchCurriculum);
-      // this.router.post('/curriculums', this.controller.postCurriculum);
-      // this.router.patch('/curriculums/:id', this.controller.updateCurriculum);
-      // this.router.delete('/curriculums/:id', this.controller.deleteCurriculum);
-      
+      this.router.get('/curriculums', this.controller.fetchCurriculums);
+      this.router.get('/curriculums/:id', this.controller.fetchCurriculum);
+      this.router.post('/curriculums', this.controller.postCurriculum);
+      this.router.patch('/curriculums/:id', this.controller.updateCurriculum);
+      this.router.delete('/curriculums/:id', this.controller.deleteCurriculum);
+
+      // /* Registration */
+      this.router.get('/registrations', this.controller.fetchRegistrations); // Registration Logs - only active semester
+      this.router.get('/registrations/mount/:indexno', this.controller.fetchRegistrationMount); // Fetch Mounted Courses
+      this.router.get('/registrations/:indexno', this.controller.fetchRegistration); // Fetch Registration Slip
+      this.router.post('/registrations', this.controller.postRegistration); // Send New Registration
+      this.router.patch('/registrations/:indexno', this.controller.updateRegistration); // Update Registration
+      this.router.delete('/registrations/:indexno', this.controller.deleteRegistration);
+
       /* Units - Faculties - Department */
       this.router.get('/departments', this.controller.fetchDepartments);
       this.router.get('/faculties', this.controller.fetchFaculties);
