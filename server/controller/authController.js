@@ -167,5 +167,34 @@ class AuthController {
     authenticateWithKey(req, res) {
         return __awaiter(this, void 0, void 0, function* () { });
     }
+    /* Account & Password */
+    changePassword(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { oldpassword, newpassword, tag } = req.body;
+                const isUser = yield sso.user.findFirst({
+                    where: {
+                        username: tag,
+                        password: sha1(oldpassword)
+                    }
+                });
+                console.log("isUser", isUser);
+                if (isUser) {
+                    const ups = yield sso.user.updateMany({
+                        where: { tag },
+                        data: { password: sha1(newpassword) }
+                    });
+                    res.status(200).json(ups);
+                }
+                else {
+                    res.status(202).json({ message: `Wrong password provided!` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
 }
 exports.default = AuthController;

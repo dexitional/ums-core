@@ -149,7 +149,34 @@ export default class AuthController {
     
     async authenticateWithKey(req: Request,res: Response) {}
 
-   
+   /* Account & Password */
+     
+   async changePassword(req: Request,res: Response) {
+    try {
+          const { oldpassword, newpassword, tag } = req.body;
+          const isUser = await sso.user.findFirst({
+             where: {
+                username: tag,
+                password: sha1(oldpassword)
+             }
+          })
+          console.log("isUser",isUser)
+          if(isUser){
+             const ups = await sso.user.updateMany({
+                where: { tag },
+                 data:{ password: sha1(newpassword) }
+             })
+             res.status(200).json(ups)
+          } else {
+             res.status(202).json({ message: `Wrong password provided!` })
+          }
+          
+       } catch (error: any) {
+             console.log(error)
+             return res.status(500).json({ message: error.message }) 
+       }
+   }
+
 
 }
    

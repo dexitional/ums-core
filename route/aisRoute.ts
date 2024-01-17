@@ -78,10 +78,10 @@ class AisRoute {
       this.router.get('/religions', this.controller.fetchReligions);
       this.router.get('/disabilities', this.controller.fetchDisabilities);
       this.router.get('/titles', this.controller.fetchTitles);
-    
+
       /* Run Scripts */
       this.router.get('/run-data', this.controller.runData);
-      this.router.get('/run-account', this.controller.runAccount);
+      this.router.get('/run-account', this.controller.runAccount);   
     }
 
 }

@@ -15,6 +15,8 @@ class AuthRoute {
         this.router.post('/credential', this.controller.authenticateWithCredential);
         this.router.post('/google', this.controller.authenticateWithGoogle);
         //  this.router.post('/appkey', this.controller.authenticateWithKey);
+        /* Change Password */
+        this.router.post('/password', this.controller.changePassword);
     }
 }
 exports.default = new AuthRoute().router;
