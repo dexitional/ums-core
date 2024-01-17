@@ -855,7 +855,7 @@ export default class AisController {
       try {
          const courses = req.body;
          const data:any = [], rdata:any = [];
-         const slip = await ais.assessment.findMany({ where: { indexno: req.params.indexno, session: { default: true }} });
+         const slip = await ais.assessment.findMany({ where: { indexno: courses[0].indexno, session: { default: true }} });
          if(slip.length) throw("Registration already submitted!")
          
          const resitcourses = courses.filter((row:any) => row.type == 'R')
@@ -904,7 +904,7 @@ export default class AisController {
          // Save Registration Courses
          const mainresp = await ais.assessment.createMany({ data })
          if(mainresp){
-           res.status(200).json({ courses: mainresp, resits: rdata })
+           res.status(200).json({ courses: mainresp, resits: rdata, totalCourses: courses.length })
          } else {
            res.status(204).json({ message: `no records found` })
          }
@@ -1526,8 +1526,8 @@ export default class AisController {
     async runData(req: Request,res: Response) {
       try { 
          let resp;
-         const courses:any = require('../../util/courses.json');
-         const students = require('../../util/students.json');
+         const courses:any = require('../../util/courses2.json');
+         // const students = require('../../util/students.json');
          // if(courses.length){
          //   for(const course of courses){
          //      console.log(course)
@@ -1576,7 +1576,7 @@ export default class AisController {
          //      })
          //   }
          // }
-         if(students){
+         if(courses){
            res.status(200).json(students)
          } else {
            res.status(204).json({ message: `no record found` })

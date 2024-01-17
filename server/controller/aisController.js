@@ -889,7 +889,7 @@ class AisController {
             try {
                 const courses = req.body;
                 const data = [], rdata = [];
-                const slip = yield ais.assessment.findMany({ where: { indexno: req.params.indexno, session: { default: true } } });
+                const slip = yield ais.assessment.findMany({ where: { indexno: courses[0].indexno, session: { default: true } } });
                 if (slip.length)
                     throw ("Registration already submitted!");
                 const resitcourses = courses.filter((row) => row.type == 'R');
@@ -939,7 +939,7 @@ class AisController {
                 // Save Registration Courses
                 const mainresp = yield ais.assessment.createMany({ data });
                 if (mainresp) {
-                    res.status(200).json({ courses: mainresp, resits: rdata });
+                    res.status(200).json({ courses: mainresp, resits: rdata, totalCourses: courses.length });
                 }
                 else {
                     res.status(204).json({ message: `no records found` });
@@ -1600,8 +1600,8 @@ class AisController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 let resp;
-                const courses = require('../../util/courses.json');
-                const students = require('../../util/students.json');
+                const courses = require('../../util/courses2.json');
+                // const students = require('../../util/students.json');
                 // if(courses.length){
                 //   for(const course of courses){
                 //      console.log(course)
@@ -1649,7 +1649,7 @@ class AisController {
                 //      })
                 //   }
                 // }
-                if (students) {
+                if (courses) {
                     res.status(200).json(students);
                 }
                 else {
