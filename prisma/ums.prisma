@@ -399,6 +399,7 @@ model major {
   sheet      sheet[]
   fresher    fresher[]
   stepChoice stepChoice[]
+  structmeta structmeta[]
 
   @@map("ais_major")
 }
@@ -573,13 +574,17 @@ model structure {
 model structmeta {
   id          String   @id @default(uuid())
   programId   String
+  majorId   String?
   semesterNum Int
-  info        Json?
+  minCredit Int
+  maxCredit Int
+  maxElectiveNum Int?
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   program program? @relation(fields: [programId], references: [id])
+  major major? @relation(fields: [majorId], references: [id])
 
   @@map("ais_structmeta")
 }

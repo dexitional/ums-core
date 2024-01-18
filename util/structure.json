@@ -1,0 +1,646 @@
+[
+    {
+        "courseId": "DPT 111",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 113",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 121",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 123",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 131",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 552",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 112",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 114",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 122",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 124",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 132",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 126",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 127",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 211",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 213",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 221",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 223",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 233",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 215",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 212",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 214",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 222",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 224",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 210",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 232",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 341",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "5",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 312",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 342",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 322",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 324",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 334",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "DPT 141",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 143",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "E"
+    },
+    {
+        "courseId": "COS 101",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "E"
+    },
+    {
+        "courseId": "CLT 101",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "1",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 144",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "E"
+    },
+    {
+        "courseId": "COS 102",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "E"
+    },
+    {
+        "courseId": "AFS 100",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "2",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 251",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 243",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 252",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "E"
+    },
+    {
+        "courseId": "ETP 201",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "3",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 252",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 226",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 228",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "E"
+    },
+    {
+        "courseId": "STA 234",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "4",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 300",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "5",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 326",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 328",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 316",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "E"
+    },
+    {
+        "courseId": "DPT 300",
+        "programId": "386750bd-f020-4615-a907-fe1fae1897ad",
+        "unitId": "337bc555-f188-4bbc-9fc1-f897672dd89b",
+        "semesterNum": "6",
+        "type": "E"
+    },
+    {
+        "courseId": "COS 101",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "COM 101",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 117",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "AFS 101",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 114",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 115",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 116",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "PRAT 911",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "1",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 125",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 123",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 121",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 122",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 126",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 127",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 124",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "FWA 128",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "2",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 213",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 214",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 215",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 216",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 211",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 212",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "PWT 277",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "3",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 221",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 224",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 226",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 227",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 222",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 223",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 225",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "PFA",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "4",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 311",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "5",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 312",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "5",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 313",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "5",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 314",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "5",
+        "type": "C"
+    },
+    {
+        "courseId": "PAFW 373",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "5",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 323",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 324",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "FPW 321",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 321",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "6",
+        "type": "C"
+    },
+    {
+        "courseId": "HIMC 322",
+        "programId": "bfb59f76-8e9f-45fd-83bc-b14a41277317",
+        "unitId": "b50c065c-acc8-4974-a24b-12cae7889f6d",
+        "semesterNum": "6",
+        "type": "C"
+    }
+]

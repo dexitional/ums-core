@@ -738,7 +738,7 @@ export default class AisController {
                   student:{
                      select: {
                         fname: true, mname: true, lname: true,
-                        semesterNum: true, id: true,
+                        semesterNum: true, id: true, gender: true,
                         program: { select: { longName: true }}
                      }
                   }
@@ -767,6 +767,7 @@ export default class AisController {
             include: { 
                course: { select: { title: true, creditHour: true }},
                student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true }} }},
+               session: { select:{ title: true }},
             },
             where: { 
                indexno: req.params.indexno,
@@ -803,8 +804,9 @@ export default class AisController {
          })
          // Meta & Instructions
          const meta = await ais.structmeta.findFirst({
-            where: {  programId: student?.programId, semesterNum: student?.semesterNum },
+            where: {  programId: student?.programId, majorId: student?.majorId, semesterNum: student?.semesterNum },
          })
+         // const meta:any = []
          if(student && maincourses.length){
             for(const course of maincourses){
                courses.push({
@@ -841,7 +843,7 @@ export default class AisController {
             }
          }
          if(courses.length){
-            res.status(200).json({ courses, meta })
+            res.status(200).json({ session: session?.title, courses, meta, condition:false, message: '' })
          } else {
             res.status(204).json({ message: `no record found` })
          }
@@ -1106,12 +1108,24 @@ export default class AisController {
                   semesterNum: true,
                   course: { select: { title: true, creditHour: true, id: true,practicalHour:true, theoryHour: true }}
                 },
-                orderBy: { semesterNum:'asc' }
-              }
+                orderBy: [{ semesterNum:'asc'}, { type:'asc' },]
+              },
+              structmeta:{ 
+               select: {
+                 id: true,
+                 minCredit: true,
+                 maxCredit: true,
+                 maxElectiveNum: true,
+                 semesterNum: true,
+                 major: { select: { longName: true }}
+               },
+               orderBy: [{ semesterNum:'asc'},]
+            }
            }, 
          })
+         
          if(resp?.structure?.length){
-            var mdata:any = new Map();
+            var mdata:any = new Map(), sdata:any = new Map();
             for(const sv of resp?.structure){
                const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` ?? 'none';
                const zd = { ...sv, course: sv?.course?.title, code: sv?.course?.id, credit: sv?.course?.creditHour, practical: sv?.course?.practicalHour, theory: sv?.course?.theoryHour, type: sv?.type }
@@ -1119,11 +1133,22 @@ export default class AisController {
                if(mdata.has(index)){
                  mdata.set(index, [...mdata.get(index), { ...zd }])
                }else{
-                  mdata.set(index,[{ ...zd }])
+                 mdata.set(index,[{ ...zd }])
                }
             }
-            console.log(Array.from(mdata))
-            res.status(200).json(Array.from(mdata))
+
+            for(const sv of resp?.structmeta){
+               const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` ?? 'none';
+               const zd = { ...sv }
+               // Data By Level - Semester
+               if(sdata.has(index)){
+                 sdata.set(index, [...sdata.get(index), { ...zd }])
+               }else{
+                 sdata.set(index,[{ ...zd }])
+               }
+            }
+            console.log(Object.fromEntries(sdata))
+            res.status(200).json({ data: Array.from(mdata), meta: Object.fromEntries(sdata) })
          } else {
             res.status(204).json({ message: `no record found` })
          }
@@ -1526,7 +1551,8 @@ export default class AisController {
     async runData(req: Request,res: Response) {
       try { 
          let resp;
-         const courses:any = require('../../util/courses2.json');
+         const structure:any = require('../../util/structure.json');
+         // const courses:any = require('../../util/courses2.json');
          // const students = require('../../util/students.json');
          // if(courses.length){
          //   for(const course of courses){
@@ -1576,8 +1602,25 @@ export default class AisController {
          //      })
          //   }
          // }
-         if(courses){
-           res.status(200).json(students)
+         
+         // if(structure.length){
+         //   for(const struct of structure){
+         //      console.log(struct)
+         //      const ins = await ais.structure.create({
+         //          data: {
+         //             course: { connect: { id: struct.courseId }},
+         //             unit: { connect: { id: struct.unitId }},
+         //             program: { connect: { id: struct.programId }},
+         //             type: struct.type,
+         //             semesterNum: Number(struct.semesterNum),
+         //          }
+         //      })
+         //   }
+         // }
+
+
+         if(structure){
+           res.status(200).json(structure)
          } else {
            res.status(204).json({ message: `no record found` })
          }

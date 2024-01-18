@@ -334,8 +334,11 @@ exports.Prisma.StructureScalarFieldEnum = {
 exports.Prisma.StructmetaScalarFieldEnum = {
   id: 'id',
   programId: 'programId',
+  majorId: 'majorId',
   semesterNum: 'semesterNum',
-  info: 'info',
+  minCredit: 'minCredit',
+  maxCredit: 'maxCredit',
+  maxElectiveNum: 'maxElectiveNum',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

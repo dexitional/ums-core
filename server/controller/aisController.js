@@ -763,7 +763,7 @@ class AisController {
                             student: {
                                 select: {
                                     fname: true, mname: true, lname: true,
-                                    semesterNum: true, id: true,
+                                    semesterNum: true, id: true, gender: true,
                                     program: { select: { longName: true } }
                                 }
                             }
@@ -793,6 +793,7 @@ class AisController {
                     include: {
                         course: { select: { title: true, creditHour: true } },
                         student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true } } } },
+                        session: { select: { title: true } },
                     },
                     where: {
                         indexno: req.params.indexno,
@@ -833,8 +834,9 @@ class AisController {
                 });
                 // Meta & Instructions
                 const meta = yield ais.structmeta.findFirst({
-                    where: { programId: student === null || student === void 0 ? void 0 : student.programId, semesterNum: student === null || student === void 0 ? void 0 : student.semesterNum },
+                    where: { programId: student === null || student === void 0 ? void 0 : student.programId, majorId: student === null || student === void 0 ? void 0 : student.majorId, semesterNum: student === null || student === void 0 ? void 0 : student.semesterNum },
                 });
+                // const meta:any = []
                 if (student && maincourses.length) {
                     for (const course of maincourses) {
                         courses.push({
@@ -872,7 +874,7 @@ class AisController {
                     }
                 }
                 if (courses.length) {
-                    res.status(200).json({ courses, meta });
+                    res.status(200).json({ session: session === null || session === void 0 ? void 0 : session.title, courses, meta, condition: false, message: '' });
                 }
                 else {
                     res.status(204).json({ message: `no record found` });
@@ -1137,7 +1139,7 @@ class AisController {
         });
     }
     fetchProgramStructure(req, res) {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const resp = yield ais.program.findUnique({
@@ -1150,12 +1152,23 @@ class AisController {
                                 semesterNum: true,
                                 course: { select: { title: true, creditHour: true, id: true, practicalHour: true, theoryHour: true } }
                             },
-                            orderBy: { semesterNum: 'asc' }
+                            orderBy: [{ semesterNum: 'asc' }, { type: 'asc' },]
+                        },
+                        structmeta: {
+                            select: {
+                                id: true,
+                                minCredit: true,
+                                maxCredit: true,
+                                maxElectiveNum: true,
+                                semesterNum: true,
+                                major: { select: { longName: true } }
+                            },
+                            orderBy: [{ semesterNum: 'asc' },]
                         }
                     },
                 });
                 if ((_a = resp === null || resp === void 0 ? void 0 : resp.structure) === null || _a === void 0 ? void 0 : _a.length) {
-                    var mdata = new Map();
+                    var mdata = new Map(), sdata = new Map();
                     for (const sv of resp === null || resp === void 0 ? void 0 : resp.structure) {
                         const index = (_b = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}, ${sv.semesterNum % 2 == 0 ? 'SEMESTER 2' : 'SEMESTER 1'}`) !== null && _b !== void 0 ? _b : 'none';
                         const zd = Object.assign(Object.assign({}, sv), { course: (_c = sv === null || sv === void 0 ? void 0 : sv.course) === null || _c === void 0 ? void 0 : _c.title, code: (_d = sv === null || sv === void 0 ? void 0 : sv.course) === null || _d === void 0 ? void 0 : _d.id, credit: (_e = sv === null || sv === void 0 ? void 0 : sv.course) === null || _e === void 0 ? void 0 : _e.creditHour, practical: (_f = sv === null || sv === void 0 ? void 0 : sv.course) === null || _f === void 0 ? void 0 : _f.practicalHour, theory: (_g = sv === null || sv === void 0 ? void 0 : sv.course) === null || _g === void 0 ? void 0 : _g.theoryHour, type: sv === null || sv === void 0 ? void 0 : sv.type });
@@ -1167,8 +1180,19 @@ class AisController {
                             mdata.set(index, [Object.assign({}, zd)]);
                         }
                     }
-                    console.log(Array.from(mdata));
-                    res.status(200).json(Array.from(mdata));
+                    for (const sv of resp === null || resp === void 0 ? void 0 : resp.structmeta) {
+                        const index = (_h = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}, ${sv.semesterNum % 2 == 0 ? 'SEMESTER 2' : 'SEMESTER 1'}`) !== null && _h !== void 0 ? _h : 'none';
+                        const zd = Object.assign({}, sv);
+                        // Data By Level - Semester
+                        if (sdata.has(index)) {
+                            sdata.set(index, [...sdata.get(index), Object.assign({}, zd)]);
+                        }
+                        else {
+                            sdata.set(index, [Object.assign({}, zd)]);
+                        }
+                    }
+                    console.log(Object.fromEntries(sdata));
+                    res.status(200).json({ data: Array.from(mdata), meta: Object.fromEntries(sdata) });
                 }
                 else {
                     res.status(204).json({ message: `no record found` });
@@ -1600,7 +1624,8 @@ class AisController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 let resp;
-                const courses = require('../../util/courses2.json');
+                const structure = require('../../util/structure.json');
+                // const courses:any = require('../../util/courses2.json');
                 // const students = require('../../util/students.json');
                 // if(courses.length){
                 //   for(const course of courses){
@@ -1649,8 +1674,22 @@ class AisController {
                 //      })
                 //   }
                 // }
-                if (courses) {
-                    res.status(200).json(students);
+                // if(structure.length){
+                //   for(const struct of structure){
+                //      console.log(struct)
+                //      const ins = await ais.structure.create({
+                //          data: {
+                //             course: { connect: { id: struct.courseId }},
+                //             unit: { connect: { id: struct.unitId }},
+                //             program: { connect: { id: struct.programId }},
+                //             type: struct.type,
+                //             semesterNum: Number(struct.semesterNum),
+                //          }
+                //      })
+                //   }
+                // }
+                if (structure) {
+                    res.status(200).json(structure);
                 }
                 else {
                     res.status(204).json({ message: `no record found` });
