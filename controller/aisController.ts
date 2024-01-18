@@ -5,7 +5,7 @@ import AuthModel from '../model/authModel'
 import { PrismaClient } from '../prisma/client/ums'
 import moment from "moment";
 //import sha1 from "sha1";
-import { getGrade, getGradePoint } from "../util/helper";
+import { getBillCodePrisma, getGrade, getGradePoint } from "../util/helper";
 const ais = new PrismaClient()
 const evs = new EvsModel();
 const Auth = new AuthModel();
@@ -790,7 +790,7 @@ export default class AisController {
          const courses:any = [];
          const id = req.params.indexno;
          // Get Student Info
-         const student:any = await ais.student.findUnique({ include:{ program: { select: { schemeId: true }}}, where : { id }})
+         const student:any = await ais.student.findUnique({ include:{ program: { select: { schemeId: true, hasMajor: true, }}}, where : { id }})
          const indexno = student?.indexno;
          // Get Active Sessions Info
          const sessions:any = await ais.session.findMany({ where : { default: true }})
@@ -806,6 +806,15 @@ export default class AisController {
          const meta = await ais.structmeta.findFirst({
             where: {  programId: student?.programId, majorId: student?.majorId, semesterNum: student?.semesterNum },
          })
+         // Current Posted Bill 
+         const groupCode =  await getBillCodePrisma(student?.semesterNum);
+         const bill = await ais.bill.findFirst({
+            where: {  
+               programId: student?.programId, sessionId: session?.id, residentialStatus: student?.residentialStatus || 'RESIDENTIAL',
+               OR: groupCode,
+            },
+         })
+         console.log("Bill", bill)
          // const meta:any = []
          if(student && maincourses.length){
             for(const course of maincourses){
@@ -842,8 +851,32 @@ export default class AisController {
                })
             }
          }
+
+         // Conditions
+         let condition = true; // Allow Registration
+         let message;          // Reason attached
+         /*
+            // Check for Exceeded Credit Hours - After
+            // If No courses are not selected! - After
+            // Check whether Total Number of Electives are chosen - After
+            
+            
+            // If student Doesnt Have an Index Number - Before
+               if(!student?.indexno) { condition = false; message = "No Index Number for Student!" }
+            // If Semester Level or Program ID or Major  ID is not Updated, Block Registration - Before
+               if(!student?.programId || (student.program.hasMajor && !student.majorId) || !student?.semesterNum) { condition = false; message = "No Major or Program or Level Set!" }
+            // If Student is Owing Fees, Lock Registration - Before
+               if(student?.accountNet > 0 && student?.accountNet < (Bill amount * Payment Percentage )) { condition = false; message = "No Index Number for Student!" }
+            // If Student is Pardoned by Finance, Allow Registration - Before
+            // If Registration Period is Inactive - Before
+            // If Registration Period is Active and Halt status is ON - Before
+            // If Registration Period is Extended for Late Finers - Before
+            
+         
+         */
+
          if(courses.length){
-            res.status(200).json({ session: session?.title, courses, meta, condition:false, message: '' })
+            res.status(200).json({ session: session?.title, courses, meta, condition, message })
          } else {
             res.status(204).json({ message: `no record found` })
          }

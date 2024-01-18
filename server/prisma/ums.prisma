@@ -864,11 +864,12 @@ model bill {
   sessionId         String
   bankaccId         String?
   programId         String?
-  studentIds        String?
+  studentIds        String? @db.Text
   mainGroupCode     String    @db.VarChar(4)
   discountGroupCode String    @db.VarChar(4)
   narrative         String    @db.VarChar(255)
   type              billGroup @default(GH)
+  residentialStatus residentialStatus @default(RESIDENTIAL)
   currency          currency  @default(GHC)
   amount            Float
   discount          Float

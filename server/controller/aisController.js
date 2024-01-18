@@ -820,7 +820,7 @@ class AisController {
                 const courses = [];
                 const id = req.params.indexno;
                 // Get Student Info
-                const student = yield ais.student.findUnique({ include: { program: { select: { schemeId: true } } }, where: { id } });
+                const student = yield ais.student.findUnique({ include: { program: { select: { schemeId: true, hasMajor: true, } } }, where: { id } });
                 const indexno = student === null || student === void 0 ? void 0 : student.indexno;
                 // Get Active Sessions Info
                 const sessions = yield ais.session.findMany({ where: { default: true } });
@@ -836,6 +836,15 @@ class AisController {
                 const meta = yield ais.structmeta.findFirst({
                     where: { programId: student === null || student === void 0 ? void 0 : student.programId, majorId: student === null || student === void 0 ? void 0 : student.majorId, semesterNum: student === null || student === void 0 ? void 0 : student.semesterNum },
                 });
+                // Current Posted Bill 
+                const groupCode = yield (0, helper_1.getBillCodePrisma)(student === null || student === void 0 ? void 0 : student.semesterNum);
+                const bill = yield ais.bill.findFirst({
+                    where: {
+                        programId: student === null || student === void 0 ? void 0 : student.programId, sessionId: session === null || session === void 0 ? void 0 : session.id, residentialStatus: (student === null || student === void 0 ? void 0 : student.residentialStatus) || 'RESIDENTIAL',
+                        OR: groupCode,
+                    },
+                });
+                console.log("Bill", bill);
                 // const meta:any = []
                 if (student && maincourses.length) {
                     for (const course of maincourses) {
@@ -873,8 +882,30 @@ class AisController {
                         });
                     }
                 }
+                // Conditions
+                let condition = true; // Allow Registration
+                let message; // Reason attached
+                /*
+                   // Check for Exceeded Credit Hours - After
+                   // If No courses are not selected! - After
+                   // Check whether Total Number of Electives are chosen - After
+                   
+                   
+                   // If student Doesnt Have an Index Number - Before
+                      if(!student?.indexno) { condition = false; message = "No Index Number for Student!" }
+                   // If Semester Level or Program ID or Major  ID is not Updated, Block Registration - Before
+                      if(!student?.programId || (student.program.hasMajor && !student.majorId) || !student?.semesterNum) { condition = false; message = "No Major or Program or Level Set!" }
+                   // If Student is Owing Fees, Lock Registration - Before
+                      if(student?.accountNet > 0 && student?.accountNet < (Bill amount * Payment Percentage )) { condition = false; message = "No Index Number for Student!" }
+                   // If Student is Pardoned by Finance, Allow Registration - Before
+                   // If Registration Period is Inactive - Before
+                   // If Registration Period is Active and Halt status is ON - Before
+                   // If Registration Period is Extended for Late Finers - Before
+                   
+                
+                */
                 if (courses.length) {
-                    res.status(200).json({ session: session === null || session === void 0 ? void 0 : session.title, courses, meta, condition: false, message: '' });
+                    res.status(200).json({ session: session === null || session === void 0 ? void 0 : session.title, courses, meta, condition, message });
                 }
                 else {
                     res.status(204).json({ message: `no record found` });
