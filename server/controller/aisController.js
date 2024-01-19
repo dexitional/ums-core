@@ -792,7 +792,7 @@ class AisController {
                 const resp = yield ais.assessment.findMany({
                     include: {
                         course: { select: { title: true, creditHour: true } },
-                        student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true } } } },
+                        student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true, department: true } } } },
                         session: { select: { title: true } },
                     },
                     where: {
