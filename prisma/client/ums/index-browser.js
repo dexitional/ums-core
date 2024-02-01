@@ -701,6 +701,7 @@ exports.Prisma.ExamCategoryScalarFieldEnum = {
 
 exports.Prisma.CertCategoryScalarFieldEnum = {
   id: 'id',
+  instituteCategoryId: 'instituteCategoryId',
   title: 'title',
   status: 'status',
   createdAt: 'createdAt',
@@ -710,6 +711,16 @@ exports.Prisma.CertCategoryScalarFieldEnum = {
 exports.Prisma.InstituteCategoryScalarFieldEnum = {
   id: 'id',
   title: 'title',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GradeWeightScalarFieldEnum = {
+  id: 'id',
+  certCategoryId: 'certCategoryId',
+  title: 'title',
+  weight: 'weight',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -734,6 +745,7 @@ exports.Prisma.SubjectScalarFieldEnum = {
 exports.Prisma.AmsPriceScalarFieldEnum = {
   id: 'id',
   categoryId: 'categoryId',
+  title: 'title',
   sellType: 'sellType',
   currency: 'currency',
   amount: 'amount',
@@ -830,7 +842,6 @@ exports.Prisma.SortedApplicantScalarFieldEnum = {
   sellType: 'sellType',
   choice1Id: 'choice1Id',
   choice2Id: 'choice2Id',
-  title: 'title',
   gradeValue: 'gradeValue',
   classValue: 'classValue',
   admitted: 'admitted',
@@ -861,6 +872,8 @@ exports.Prisma.ApplicantScalarFieldEnum = {
   serial: 'serial',
   stageId: 'stageId',
   applyTypeId: 'applyTypeId',
+  choiceId: 'choiceId',
+  profileId: 'profileId',
   photo: 'photo',
   meta: 'meta',
   gradeValue: 'gradeValue',
@@ -936,7 +949,7 @@ exports.Prisma.StepEducationScalarFieldEnum = {
 exports.Prisma.StepResultScalarFieldEnum = {
   id: 'id',
   serial: 'serial',
-  examCategoryId: 'examCategoryId',
+  certCategoryId: 'certCategoryId',
   indexNumber: 'indexNumber',
   sitting: 'sitting',
   startYear: 'startYear',
@@ -948,6 +961,7 @@ exports.Prisma.StepGradeScalarFieldEnum = {
   id: 'id',
   resultId: 'resultId',
   subjectId: 'subjectId',
+  gradeWeightId: 'gradeWeightId',
   serial: 'serial',
   gradeValue: 'gradeValue',
   createdAt: 'createdAt',
@@ -957,7 +971,6 @@ exports.Prisma.StepGradeScalarFieldEnum = {
 exports.Prisma.StepEmploymentScalarFieldEnum = {
   id: 'id',
   serial: 'serial',
-  titleId: 'titleId',
   employerName: 'employerName',
   employerAddress: 'employerAddress',
   jobTitle: 'jobTitle',
@@ -992,6 +1005,7 @@ exports.Prisma.StepChoiceScalarFieldEnum = {
 };
 
 exports.Prisma.StepRefereeScalarFieldEnum = {
+  id: 'id',
   serial: 'serial',
   titleId: 'titleId',
   fname: 'fname',
@@ -1481,6 +1495,7 @@ exports.Prisma.ModelName = {
   examCategory: 'examCategory',
   certCategory: 'certCategory',
   instituteCategory: 'instituteCategory',
+  gradeWeight: 'gradeWeight',
   documentCategory: 'documentCategory',
   subject: 'subject',
   amsPrice: 'amsPrice',

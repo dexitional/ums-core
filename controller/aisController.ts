@@ -278,7 +278,7 @@ export default class AisController {
          console.log(error)
          return res.status(500).json({ message: error.message }) 
       }
-   }
+     }
 
      async fetchCourses(req: Request,res: Response) {
       const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
@@ -737,7 +737,7 @@ export default class AisController {
                include: { 
                   student:{
                      select: {
-                        fname: true, mname: true, lname: true,
+                        fname: true, mname: true, lname: true, indexno: true,
                         semesterNum: true, id: true, gender: true,
                         program: { select: { longName: true }}
                      }
@@ -766,7 +766,7 @@ export default class AisController {
          const resp = await ais.assessment.findMany({
             include: { 
                course: { select: { title: true, creditHour: true }},
-               student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true, department: true }} }},
+               student: { select: { id: true, indexno: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true, department: true }} }},
                session: { select:{ title: true }},
             },
             where: { 
@@ -1559,11 +1559,89 @@ export default class AisController {
       }
      }
 
+     async fetchCategories(req: Request,res: Response) {
+      try {
+         const resp = await ais.category.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchRelations(req: Request,res: Response) {
+      try {
+         const resp = await ais.relation.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchMarital(req: Request,res: Response) {
+      try {
+         const resp = await ais.marital.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
      async fetchTitles(req: Request,res: Response) {
       try {
          const resp = await ais.title.findMany({
             where: { status: true },
          })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchVendors(req: Request,res: Response) {
+      try {
+         const resp = await ais.vendor.findMany({
+            where: { status: true },
+         })
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+     async fetchCollectors(req: Request,res: Response) {
+      try {
+         const resp = await ais.collector.findMany()
          if(resp){
            res.status(200).json(resp)
          } else {
@@ -1584,7 +1662,8 @@ export default class AisController {
     async runData(req: Request,res: Response) {
       try { 
          let resp;
-         const structure:any = require('../../util/structure.json');
+         const subjects:any = require('../../util/subjects.json');
+         // const structure:any = require('../../util/structure.json');
          // const courses:any = require('../../util/courses2.json');
          // const students = require('../../util/students.json');
          // if(courses.length){
@@ -1651,9 +1730,20 @@ export default class AisController {
          //   }
          // }
 
+         //  if(subjects.length){
+         //   for(const subj of subjects){
+         //      console.log(subj)
+         //      const ins = await ais.subject.create({
+         //          data: {
+         //             title: subj?.title 
+         //          }
+         //      })
+         //   }
+         // }
 
-         if(structure){
-           res.status(200).json(structure)
+
+         if(subjects){
+           res.status(200).json(subjects)
          } else {
            res.status(204).json({ message: `no record found` })
          }

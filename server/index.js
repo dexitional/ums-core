@@ -9,6 +9,8 @@ const helmet_1 = __importDefault(require("helmet"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const aisRoute_1 = __importDefault(require("./route/aisRoute"));
+const amsRoute_1 = __importDefault(require("./route/amsRoute"));
+const amsRoute_2 = __importDefault(require("./route/amsRoute"));
 const hrsRoute_1 = __importDefault(require("./route/hrsRoute"));
 dotenv_1.default.config();
 const fileUpload = require('express-fileupload');
@@ -36,7 +38,9 @@ class Routes {
         // Routes & Endpoints
         app.get('/', (req, res) => { res.send("test"); });
         app.use("/api/auth", authRoute_1.default); /** Authentication API **/
-        app.use("/api/ais", aisRoute_1.default); /** Dric API **/
+        app.use("/api/ais", aisRoute_1.default); /** Academics API **/
+        app.use("/api/ams", amsRoute_1.default); /** Admissions API **/
+        app.use("/api/fms", amsRoute_2.default); /** Finance API **/
         app.use("/api/hrs", hrsRoute_1.default); /** HRS API **/
         // Initialize Server
         app.listen(port, () => console.log(`⚡️[server]: Server is running at http://localhost:${port}`));

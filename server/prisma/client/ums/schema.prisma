@@ -255,13 +255,12 @@ model title {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  student        student[]
-  stepProfile    stepProfile[]
-  stepGuardian   stepGuardian[]
-  stepEmployment stepEmployment[]
-  stepReferee    stepReferee[]
-  staff          staff[]
-  relative       relative[]
+  student      student[]
+  stepProfile  stepProfile[]
+  stepGuardian stepGuardian[]
+  stepReferee  stepReferee[]
+  staff        staff[]
+  relative     relative[]
 }
 
 model relation {
@@ -572,19 +571,19 @@ model structure {
 }
 
 model structmeta {
-  id          String   @id @default(uuid())
-  programId   String
-  majorId   String?
-  semesterNum Int
-  minCredit Int
-  maxCredit Int
+  id             String   @id @default(uuid())
+  programId      String
+  majorId        String?
+  semesterNum    Int
+  minCredit      Int
+  maxCredit      Int
   maxElectiveNum Int?
-  status      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   program program? @relation(fields: [programId], references: [id])
-  major major? @relation(fields: [majorId], references: [id])
+  major   major?   @relation(fields: [majorId], references: [id])
 
   @@map("ais_structmeta")
 }
@@ -860,23 +859,23 @@ model bankacc {
 }
 
 model bill {
-  id                String    @id @default(uuid())
+  id                String            @id @default(uuid())
   sessionId         String
   bankaccId         String?
   programId         String?
-  studentIds        String? @db.Text
-  mainGroupCode     String    @db.VarChar(4)
-  discountGroupCode String    @db.VarChar(4)
-  narrative         String    @db.VarChar(255)
-  type              billGroup @default(GH)
+  studentIds        Json?
+  mainGroupCode     String            @db.VarChar(4)
+  discountGroupCode String            @db.VarChar(4)
+  narrative         String            @db.VarChar(255)
+  type              billGroup         @default(GH)
   residentialStatus residentialStatus @default(RESIDENTIAL)
-  currency          currency  @default(GHC)
+  currency          currency          @default(GHC)
   amount            Float
   discount          Float
   quota             Float
-  posted            Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  posted            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   session session? @relation(fields: [sessionId], references: [id])
   bankacc bankacc? @relation(fields: [bankaccId], references: [id])
@@ -1079,43 +1078,61 @@ model category {
 }
 
 model examCategory {
-  id        String   @id
+  id        String   @id @default(uuid())
   title     String   @db.VarChar(100)
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  stepResult stepResult[]
 
   @@map("ams_exam_category")
 }
 
 model certCategory {
-  id        String   @id
-  title     String   @db.VarChar(100)
-  status    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  instituteCategoryId String?
+  title               String   @db.VarChar(100)
+  status              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  stepEducation stepEducation[]
+  instituteCategory instituteCategory? @relation(fields: [instituteCategoryId], references: [id])
+  stepEducation     stepEducation[]
+  gradeWeight       gradeWeight[]
+  stepResult        stepResult[]
 
   @@map("ams_cert_category")
 }
 
 model instituteCategory {
-  id        String   @id
+  id        String   @id @default(uuid())
   title     String   @db.VarChar(100)
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   stepEducation stepEducation[]
+  certCategory  certCategory[]
 
   @@map("ams_institute_category")
 }
 
+model gradeWeight {
+  id             String   @id @default(uuid())
+  certCategoryId String?
+  title          String   @db.VarChar(100)
+  weight         Int?     @db.TinyInt
+  status         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  certCategory certCategory? @relation(fields: [certCategoryId], references: [id])
+  stepGrade    stepGrade[]
+
+  @@map("ams_grade_weight")
+}
+
 model documentCategory {
-  id        String   @id
+  id        String   @id @default(uuid())
   title     String   @db.VarChar(100)
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -1127,8 +1144,8 @@ model documentCategory {
 }
 
 model subject {
-  id        String   @id
-  title     String   @db.VarChar(100)
+  id        String   @id @default(uuid())
+  title     String   @db.VarChar(255)
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1141,6 +1158,7 @@ model subject {
 model amsPrice {
   id         String   @id @default(uuid())
   categoryId String?
+  title      String   @db.VarChar(255)
   sellType   Int?
   currency   currency @default(GHC)
   amount     Float
@@ -1156,7 +1174,7 @@ model amsPrice {
 model amsForm {
   id        String   @id @default(uuid())
   title     String   @db.VarChar(255)
-  meta      String   @db.LongText
+  meta      Json?
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1222,14 +1240,14 @@ model admissionLetter {
 }
 
 model voucher {
-  serial         Int       @id
+  serial         String    @id
   pin            String
   admissionId    String
-  vendorId       String
+  vendorId       String?
   categoryId     String?
-  sellType       Int
-  applicantName  String    @db.VarChar(255)
-  applicantPhone String    @db.VarChar(10)
+  sellType       Int?
+  applicantName  String?   @db.VarChar(255)
+  applicantPhone String?   @db.VarChar(10)
   soldAt         DateTime?
   status         Boolean   @default(true)
   createdAt      DateTime  @default(now())
@@ -1278,32 +1296,33 @@ model admission {
 }
 
 model sortedApplicant {
-  serial      Int      @id
+  serial      String   @id
   admissionId String
   stageId     String
   applyTypeId String
   categoryId  String?
-  sellType    Int
-  choice1Id   String
-  choice2Id   String
-  title       String   @db.VarChar(350)
-  gradeValue  Int
-  classValue  Int
+  sellType    Int?
+  choice1Id   String?
+  choice2Id   String?
+  gradeValue  Int?
+  classValue  Int?
   admitted    Boolean  @default(true)
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  admission admission? @relation(fields: [admissionId], references: [id])
-  stage     stage?     @relation(fields: [stageId], references: [id])
-  applyType applyType? @relation(fields: [applyTypeId], references: [id])
-  category  category?  @relation(fields: [categoryId], references: [id])
+  admission admission?  @relation(fields: [admissionId], references: [id])
+  stage     stage?      @relation(fields: [stageId], references: [id])
+  applyType applyType?  @relation(fields: [applyTypeId], references: [id])
+  category  category?   @relation(fields: [categoryId], references: [id])
+  choice1   stepChoice? @relation("choice1", fields: [choice1Id], references: [id])
+  choice2   stepChoice? @relation("choice2", fields: [choice2Id], references: [id])
 
   @@map("ams_sorted")
 }
 
 model fresher {
-  serial      Int          @id
+  serial      String       @id
   admissionId String
   sessionId   String
   billId      String
@@ -1319,39 +1338,44 @@ model fresher {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  admission admission? @relation(fields: [admissionId], references: [id])
-  session   session?   @relation(fields: [sessionId], references: [id])
-  bill      bill?      @relation(fields: [billId], references: [id])
-  program   program?   @relation(fields: [programId], references: [id])
-  major     major?     @relation(fields: [majorId], references: [id])
-  category  category?  @relation(fields: [categoryId], references: [id])
+  admission   admission?   @relation(fields: [admissionId], references: [id])
+  session     session?     @relation(fields: [sessionId], references: [id])
+  bill        bill?        @relation(fields: [billId], references: [id])
+  program     program?     @relation(fields: [programId], references: [id])
+  major       major?       @relation(fields: [majorId], references: [id])
+  category    category?    @relation(fields: [categoryId], references: [id])
+  stepProfile stepProfile? @relation(fields: [serial], references: [serial])
 
   @@map("ams_fresher")
 }
 
 model applicant {
-  serial      Int      @id
+  serial      String   @id
   stageId     String
   applyTypeId String
-  photo       String   @db.LongText
-  meta        String   @db.LongText
-  gradeValue  Int
-  classValue  Int
-  admitted    Boolean  @default(true)
-  submitted   Boolean  @default(true)
-  submittedAt DateTime @default(now())
+  choiceId    String?
+  profileId   String?
+  photo       String?  @db.LongText
+  meta        Json?
+  gradeValue  Int?
+  classValue  Int?
+  admitted    Boolean  @default(false)
+  submitted   Boolean  @default(false)
+  submittedAt DateTime
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  stage     stage?     @relation(fields: [stageId], references: [id])
-  applyType applyType? @relation(fields: [applyTypeId], references: [id])
+  stage     stage?       @relation(fields: [stageId], references: [id])
+  applyType applyType?   @relation(fields: [applyTypeId], references: [id])
+  choice    stepChoice?  @relation(fields: [choiceId], references: [id])
+  profile   stepProfile? @relation(fields: [profileId], references: [serial])
 
   @@map("ams_applicant")
 }
 
 model stepProfile {
-  serial          Int      @id
+  serial          String   @id
   titleId         String
   fname           String   @db.VarChar(255)
   mname           String?  @db.VarChar(350)
@@ -1383,12 +1407,14 @@ model stepProfile {
   region      region?     @relation(fields: [regionId], references: [id])
   religion    religion?   @relation(fields: [religionId], references: [id])
   disability  disability? @relation(fields: [disabilityId], references: [id])
+  fresher     fresher[]
+  applicant   applicant[]
 
   @@map("ams_step_profile")
 }
 
 model stepGuardian {
-  serial     Int      @id
+  serial     String   @id
   relationId String
   titleId    String
   fname      String   @db.VarChar(255)
@@ -1409,7 +1435,7 @@ model stepGuardian {
 
 model stepEducation {
   id                  String   @id @default(uuid())
-  serial              Int
+  serial              String
   instituteCategoryId String?
   certCategoryId      String?
   instituteName       String   @db.VarChar(255)
@@ -1431,39 +1457,40 @@ model stepEducation {
 
 model stepResult {
   id             String   @id @default(uuid())
-  serial         Int
-  examCategoryId String?
+  serial         String
+  certCategoryId String?
   indexNumber    String   @db.VarChar(255)
   sitting        Int?
   startYear      Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  examCategory examCategory? @relation(fields: [examCategoryId], references: [id])
-  stepGrade    stepGrade[]
+  certCategory certCategory? @relation(fields: [certCategoryId], references: [id])
+  grades       stepGrade[]
 
   @@map("ams_step_result")
 }
 
 model stepGrade {
-  id         String   @id @default(uuid())
-  resultId   String?
-  subjectId  String?
-  serial     Int
-  gradeValue Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  resultId      String?
+  subjectId     String?
+  gradeWeightId String?
+  serial        String
+  gradeValue    Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  result  stepResult? @relation(fields: [resultId], references: [id])
-  subject subject?    @relation(fields: [subjectId], references: [id])
+  result      stepResult?  @relation(fields: [resultId], references: [id])
+  subject     subject?     @relation(fields: [subjectId], references: [id])
+  gradeWeight gradeWeight? @relation(fields: [gradeWeightId], references: [id])
 
   @@map("ams_step_grade")
 }
 
 model stepEmployment {
   id              String   @id @default(uuid())
-  serial          Int
-  titleId         String
+  serial          String
   employerName    String   @db.VarChar(350)
   employerAddress String   @db.VarChar(350)
   jobTitle        String   @db.VarChar(255)
@@ -1477,15 +1504,13 @@ model stepEmployment {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  title title? @relation(fields: [titleId], references: [id])
-
   @@map("ams_step_employment")
 }
 
 model stepDocument {
   id                 String   @id @default(uuid())
   documentCategoryId String?
-  serial             Int
+  serial             String
   base64             String?  @db.LongText
   mime               String?  @db.VarChar(255)
   createdAt          DateTime @default(now())
@@ -1500,18 +1525,22 @@ model stepChoice {
   id        String   @id @default(uuid())
   programId String?
   majorId   String?
-  serial    Int
+  serial    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  program program? @relation(fields: [programId], references: [id])
-  major   major?   @relation(fields: [majorId], references: [id])
+  program   program?          @relation(fields: [programId], references: [id])
+  major     major?            @relation(fields: [majorId], references: [id])
+  applicant applicant[]
+  choice1   sortedApplicant[] @relation("choice1")
+  choice2   sortedApplicant[] @relation("choice2")
 
   @@map("ams_step_choice")
 }
 
 model stepReferee {
-  serial     Int      @id
+  id         String   @id @default(uuid())
+  serial     String
   titleId    String
   fname      String   @db.VarChar(255)
   mname      String?  @db.VarChar(350)

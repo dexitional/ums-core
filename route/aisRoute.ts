@@ -77,7 +77,12 @@ class AisRoute {
       this.router.get('/regions', this.controller.fetchRegions);
       this.router.get('/religions', this.controller.fetchReligions);
       this.router.get('/disabilities', this.controller.fetchDisabilities);
+      this.router.get('/categories', this.controller.fetchCategories);
+      this.router.get('/relations', this.controller.fetchRelations);
+      this.router.get('/marital', this.controller.fetchMarital);
       this.router.get('/titles', this.controller.fetchTitles);
+      this.router.get('/vendors', this.controller.fetchVendors);
+      this.router.get('/collectors', this.controller.fetchCollectors);
 
       /* Run Scripts */
       this.router.get('/run-data', this.controller.runData);

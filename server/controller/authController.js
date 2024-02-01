@@ -45,7 +45,7 @@ class AuthController {
                             user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName };
                     }
                     else if (groupId == 3) { // Applicant
-                        const data = yield sso.voucher.findFirst({ where: { serial: Number(""), pin: "" } });
+                        const data = yield sso.voucher.findFirst({ where: { serial: "", pin: "" } });
                         if (data)
                             user = { tag, fname: "Admission", mname: "", lname: "Applicant", mail: "", descriptor: "Applicant", department: "", group_id: groupId, group_name: groupName };
                     }

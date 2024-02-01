@@ -10,12 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 // SMS 
 var axios = require('axios');
-module.exports = function (phone, msg) {
+module.exports = function (phone, msg, from) {
     return __awaiter(this, void 0, void 0, function* () {
         const data = {
             key: 'pgC2DPZTwdbe68qPkuo4G36bV',
             //key : 'B8pRALyxDgt4l5nRLOYVPoIm1', // Mnotify
-            from: 'AUCC',
+            from: from || 'AUCC',
             to: phone,
             content: msg,
         };

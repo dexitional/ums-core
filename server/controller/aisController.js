@@ -762,7 +762,7 @@ class AisController {
                     ais.activityRegister.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize), orderBy: { createdAt: 'desc' }, include: {
                             student: {
                                 select: {
-                                    fname: true, mname: true, lname: true,
+                                    fname: true, mname: true, lname: true, indexno: true,
                                     semesterNum: true, id: true, gender: true,
                                     program: { select: { longName: true } }
                                 }
@@ -792,7 +792,7 @@ class AisController {
                 const resp = yield ais.assessment.findMany({
                     include: {
                         course: { select: { title: true, creditHour: true } },
-                        student: { select: { id: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true, department: true } } } },
+                        student: { select: { id: true, indexno: true, fname: true, mname: true, lname: true, gender: true, semesterNum: true, program: { select: { longName: true, department: true } } } },
                         session: { select: { title: true } },
                     },
                     where: {
@@ -1632,6 +1632,63 @@ class AisController {
             }
         });
     }
+    fetchCategories(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.category.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchRelations(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.relation.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchMarital(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.marital.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
     fetchTitles(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -1651,11 +1708,48 @@ class AisController {
             }
         });
     }
+    fetchVendors(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.vendor.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchCollectors(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.collector.findMany();
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
     runData(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 let resp;
-                const structure = require('../../util/structure.json');
+                const subjects = require('../../util/subjects.json');
+                // const structure:any = require('../../util/structure.json');
                 // const courses:any = require('../../util/courses2.json');
                 // const students = require('../../util/students.json');
                 // if(courses.length){
@@ -1719,8 +1813,18 @@ class AisController {
                 //      })
                 //   }
                 // }
-                if (structure) {
-                    res.status(200).json(structure);
+                //  if(subjects.length){
+                //   for(const subj of subjects){
+                //      console.log(subj)
+                //      const ins = await ais.subject.create({
+                //          data: {
+                //             title: subj?.title 
+                //          }
+                //      })
+                //   }
+                // }
+                if (subjects) {
+                    res.status(200).json(subjects);
                 }
                 else {
                     res.status(204).json({ message: `no record found` });

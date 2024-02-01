@@ -1,11 +1,11 @@
 // SMS 
 var axios = require('axios');
 
-module.exports = async function(phone: string,msg: string) {
+module.exports = async function(phone: string,msg: string, from: string) {
     const data = {
         key : 'pgC2DPZTwdbe68qPkuo4G36bV', // Bulksmsgh
         //key : 'B8pRALyxDgt4l5nRLOYVPoIm1', // Mnotify
-        from : 'AUCC',
+        from : from || 'AUCC',
         to : phone,
         content : msg,
     }

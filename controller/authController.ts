@@ -32,7 +32,7 @@ export default class AuthController {
                    if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName }
                 
                 } else if(groupId == 3){ // Applicant
-                   const data = await sso.voucher.findFirst({ where: { serial: Number(""), pin: "" } }); 
+                   const data = await sso.voucher.findFirst({ where: { serial: "", pin: "" } }); 
                    if(data) user = { tag, fname: "Admission", mname: "", lname: "Applicant" , mail: "", descriptor: "Applicant", department: "", group_id: groupId, group_name: groupName }
 
                 } else if(groupId == 2){ // Staff

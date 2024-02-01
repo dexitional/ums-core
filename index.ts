@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import aisRoute from './route/aisRoute';
+import amsRoute from './route/amsRoute';
+import fmsRoute from './route/amsRoute';
 import hrsRoute from './route/hrsRoute';
 dotenv.config();
 
@@ -37,7 +39,9 @@ export default class Routes {
     // Routes & Endpoints
     app.get('/', (req,res) => { res.send("test")});
     app.use("/api/auth", authRoute); /** Authentication API **/
-    app.use("/api/ais", aisRoute); /** Dric API **/
+    app.use("/api/ais", aisRoute); /** Academics API **/
+    app.use("/api/ams", amsRoute); /** Admissions API **/
+    app.use("/api/fms", fmsRoute); /** Finance API **/
     app.use("/api/hrs", hrsRoute); /** HRS API **/
     
     // Initialize Server
