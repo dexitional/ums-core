@@ -26,6 +26,7 @@ class AuthController {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                console.log(req.body);
                 const { username, password } = req.body;
                 if (!username)
                     throw new Error('No username provided!');
@@ -34,6 +35,7 @@ class AuthController {
                 // Locate Single-Sign-On Record or Student account
                 //const isUser = await Auth.withCredential(username, password);
                 const isUser = yield sso.user.findFirst({ where: { username, password: sha1(password) }, include: { group: { select: { title: true } } } });
+                console.log(isUser);
                 if (isUser) {
                     let { id, tag, groupId, group: { title: groupName } } = isUser;
                     let user;

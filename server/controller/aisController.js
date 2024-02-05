@@ -1066,11 +1066,11 @@ class AisController {
                         registerSessionId: null,
                     }
                 });
-                if (resp) {
+                if (resp === null || resp === void 0 ? void 0 : resp.count) {
                     res.status(200).json(resp);
                 }
                 else {
-                    res.status(204).json({ message: `No records found` });
+                    res.status(204).json({ message: `Registration not deleted` });
                 }
             }
             catch (error) {

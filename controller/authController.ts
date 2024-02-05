@@ -16,12 +16,14 @@ export default class AuthController {
     
     async authenticateWithCredential(req: Request,res: Response) {
         try {
+           console.log(req.body)
            const { username, password }:{ username: string, password: string } = req.body;
            if(!username) throw new Error('No username provided!');
            if(!password) throw new Error('No password provided!');
            // Locate Single-Sign-On Record or Student account
            //const isUser = await Auth.withCredential(username, password);
            const isUser:any = await sso.user.findFirst({ where: { username, password: sha1(password)}, include: { group: { select: { title: true }}}});
+           console.log(isUser)
            if (isUser) {
                 let { id, tag, groupId, group: { title: groupName } } = isUser;
                 let user;

@@ -1304,19 +1304,21 @@ model sortedApplicant {
   sellType    Int?
   choice1Id   String?
   choice2Id   String?
+  profileId   String?
   gradeValue  Int?
   classValue  Int?
-  admitted    Boolean  @default(true)
+  admitted    Boolean  @default(false)
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  admission admission?  @relation(fields: [admissionId], references: [id])
-  stage     stage?      @relation(fields: [stageId], references: [id])
-  applyType applyType?  @relation(fields: [applyTypeId], references: [id])
-  category  category?   @relation(fields: [categoryId], references: [id])
-  choice1   stepChoice? @relation("choice1", fields: [choice1Id], references: [id])
-  choice2   stepChoice? @relation("choice2", fields: [choice2Id], references: [id])
+  admission admission?   @relation(fields: [admissionId], references: [id])
+  stage     stage?       @relation(fields: [stageId], references: [id])
+  applyType applyType?   @relation(fields: [applyTypeId], references: [id])
+  category  category?    @relation(fields: [categoryId], references: [id])
+  choice1   stepChoice?  @relation("choice1", fields: [choice1Id], references: [id])
+  choice2   stepChoice?  @relation("choice2", fields: [choice2Id], references: [id])
+  profile   stepProfile? @relation(fields: [profileId], references: [serial])
 
   @@map("ams_sorted")
 }
@@ -1401,14 +1403,15 @@ model stepProfile {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  title       title?      @relation(fields: [titleId], references: [id])
-  nationality country?    @relation("profileNationality", fields: [nationalityId], references: [id])
-  country     country?    @relation("profileCountry", fields: [countryId], references: [id])
-  region      region?     @relation(fields: [regionId], references: [id])
-  religion    religion?   @relation(fields: [religionId], references: [id])
-  disability  disability? @relation(fields: [disabilityId], references: [id])
-  fresher     fresher[]
-  applicant   applicant[]
+  title           title?            @relation(fields: [titleId], references: [id])
+  nationality     country?          @relation("profileNationality", fields: [nationalityId], references: [id])
+  country         country?          @relation("profileCountry", fields: [countryId], references: [id])
+  region          region?           @relation(fields: [regionId], references: [id])
+  religion        religion?         @relation(fields: [religionId], references: [id])
+  disability      disability?       @relation(fields: [disabilityId], references: [id])
+  fresher         fresher[]
+  applicant       applicant[]
+  sortedApplicant sortedApplicant[]
 
   @@map("ams_step_profile")
 }

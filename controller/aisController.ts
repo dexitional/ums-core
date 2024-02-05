@@ -1031,10 +1031,10 @@ export default class AisController {
             }
          })
          
-         if(resp){
+         if(resp?.count){
             res.status(200).json(resp)
          } else {
-            res.status(204).json({ message: `No records found` })
+            res.status(204).json({ message: `Registration not deleted` })
          }
       } catch (error: any) {
          console.log(error)

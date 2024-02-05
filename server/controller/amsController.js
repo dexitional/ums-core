@@ -788,7 +788,7 @@ class AmsController {
                 const resp = yield ams.$transaction([
                     ams.sortedApplicant.count(Object.assign({}, (searchCondition))),
                     ams.sortedApplicant.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize), include: {
-                            admission: true, choice1: true, choice2: true, stage: true, applyType: true, category: true
+                            admission: true, choice1: { include: { program: true } }, choice2: { include: { program: true } }, profile: true, stage: true, applyType: true, category: true
                         } }))
                 ]);
                 if (resp && ((_a = resp[1]) === null || _a === void 0 ? void 0 : _a.length)) {
@@ -814,7 +814,7 @@ class AmsController {
                 const resp = yield ams.sortedApplicant.findUnique({
                     where: { serial: req.params.id },
                     include: {
-                        admission: true, choice1: true, choice2: true, stage: true, applyType: true, category: true
+                        admission: true, choice1: { include: { program: true } }, choice2: { include: { program: true } }, profile: true, stage: true, applyType: true, category: true
                     }
                 });
                 if (resp) {
@@ -835,15 +835,18 @@ class AmsController {
             try {
                 const { serial } = req.body;
                 // const { admissionId,stageId,applyTypeId,categoryId,choice1Id,choice2Id } = req.body
+                const voucher = yield ams.voucher.findFirst({ where: { serial } });
+                const admission = yield ams.admission.findFirst({ where: { default: true } });
                 const applicant = yield ams.applicant.findFirst({ where: { serial }, include: { stage: true } });
                 const choice = yield ams.stepChoice.findFirst({ where: { serial, id: { not: applicant === null || applicant === void 0 ? void 0 : applicant.choiceId } } });
-                const { stageId, applyTypeId, stage: { categoryId }, choiceId: choice1Id } = applicant !== null && applicant !== void 0 ? applicant : null;
+                const education = yield ams.stepEducation.findFirst({ where: { serial } });
+                const { stageId, applyTypeId, classValue, gradeValue, stage: { categoryId }, choiceId: choice1Id } = applicant !== null && applicant !== void 0 ? applicant : null;
                 const { id: choice2Id } = choice !== null && choice !== void 0 ? choice : null;
-                // delete req.body.admissionId; delete req.body.stageId;
-                // delete req.body.applyTypeId; delete req.body.choice1Id;
-                // delete req.body.choice2Id; delete req.body.categoryId;
+                const { id: admissionId } = admission !== null && admission !== void 0 ? admission : null;
+                const { sellType } = voucher !== null && voucher !== void 0 ? voucher : null;
+                const dt = { serial, sellType, classValue, gradeValue, admitted: false };
                 const resp = yield ams.sortedApplicant.create({
-                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })), choice1Id && ({ choice1: { connect: { id: choice1Id } } })), choice2Id && ({ choice2: { connect: { id: choice2Id } } })), categoryId && ({ category: { connect: { id: categoryId } } })),
+                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, dt), admissionId && ({ admission: { connect: { id: admissionId } } })), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })), choice1Id && ({ choice1: { connect: { id: choice1Id } } })), choice2Id && ({ choice2: { connect: { id: choice2Id } } })), categoryId && ({ category: { connect: { id: categoryId } } })), serial && ({ profile: { connect: { serial } } })),
                 });
                 if (resp) {
                     res.status(200).json(resp);

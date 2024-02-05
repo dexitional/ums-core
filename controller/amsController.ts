@@ -764,7 +764,7 @@ export default class AmsController {
                skip: offset,
                take: Number(pageSize),
                include: {
-                  admission: true, choice1: true, choice2: true, stage: true, applyType: true, category: true 
+                  admission: true, choice1: { include: { program: true }}, choice2: { include: { program: true }}, profile:true, stage: true, applyType: true, category: true 
                }
             })
          ]);
@@ -789,7 +789,7 @@ export default class AmsController {
          const resp = await ams.sortedApplicant.findUnique({
             where: { serial: req.params.id },
             include: {
-               admission: true, choice1: true, choice2: true, stage: true, applyType: true, category: true 
+               admission: true, choice1: { include: { program: true }}, choice2: { include: { program: true }}, profile:true, stage: true, applyType: true, category: true 
             }
          })
          if(resp){
@@ -807,24 +807,28 @@ export default class AmsController {
       try {
          const { serial } = req.body
          // const { admissionId,stageId,applyTypeId,categoryId,choice1Id,choice2Id } = req.body
+         const voucher:any = await ams.voucher.findFirst({ where:{ serial }})
+         const admission:any = await ams.admission.findFirst({ where:{ default: true }})
          const applicant:any = await ams.applicant.findFirst({ where:{ serial }, include:{ stage: true }})
          const choice:any = await ams.stepChoice.findFirst({ where:{ serial, id: { not: applicant?.choiceId } }})
+         const education:any = await ams.stepEducation.findFirst({ where:{ serial  }})
 
-         const { stageId,applyTypeId, stage:{ categoryId }, choiceId:choice1Id } = applicant ?? null;
+         const { stageId,applyTypeId, classValue,gradeValue, stage:{ categoryId }, choiceId:choice1Id } = applicant ?? null;
          const { id: choice2Id } = choice ?? null;
-         // delete req.body.admissionId; delete req.body.stageId;
-         // delete req.body.applyTypeId; delete req.body.choice1Id;
-         // delete req.body.choice2Id; delete req.body.categoryId;
-      
+         const { id: admissionId } = admission ?? null;
+         const { sellType } = voucher ?? null;
+         const dt = { serial, sellType,classValue, gradeValue, admitted: false }
+         
          const resp = await ams.sortedApplicant.create({
             data: {
-               ... req.body,
-               // ... admissionId && ({ admission: { connect: { id: admissionId }}}),
+               ... dt,
+               ... admissionId && ({ admission: { connect: { id: admissionId }}}),
                ... stageId && ({ stage: { connect: { id: stageId }}}),
                ... applyTypeId && ({ applyType: { connect: { id: applyTypeId }}}),
                ... choice1Id && ({ choice1: { connect: { id: choice1Id }}}),
                ... choice2Id && ({ choice2: { connect: { id: choice2Id }}}),
                ... categoryId && ({ category: { connect: { id: categoryId }}}),
+               ... serial && ({ profile: { connect: { serial }}}),
             },
          })
          if(resp){
