@@ -281,7 +281,9 @@ model marital {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  staff staff[]
+  staff   staff[]
+  student student[]
+  profile stepProfile[]
 }
 
 // 'SINGLE','MARRIED','SEPARATED','WIDOW','DIVORCED','NONE'
@@ -448,6 +450,7 @@ model student {
   lname             String             @db.VarChar(255)
   gender            String?            @db.VarChar(20)
   dob               DateTime?          @db.DateTime(3)
+  maritalId         String?
   email             String?            @db.VarChar(255)
   phone             String?            @db.VarChar(20)
   hometown          String?            @db.VarChar(255)
@@ -479,7 +482,8 @@ model student {
   graduateId        String?
   graduateCgpa      String?
   graduateCertNo    String?
-  instituteEmail    String?
+  instituteEmail    String?            @db.VarChar(350)
+  instituteAffliate String?            @db.VarChar(350)
   flagPardon        Boolean            @default(false)
   accountNet        Float              @default(0) @db.Float
 
@@ -503,6 +507,8 @@ model student {
   transaction        transaction[]
   studentAccount     studentAccount[]
   assessment         assessment[]
+  fresher            fresher[]
+  marital            marital?             @relation(fields: [maritalId], references: [id])
 
   @@map("ais_student")
 }
@@ -1073,6 +1079,7 @@ model category {
   voucher         voucher[]
   sortedApplicant sortedApplicant[]
   fresher         fresher[]
+  amsForm         amsForm[]
 
   @@map("ams_category")
 }
@@ -1172,14 +1179,16 @@ model amsPrice {
 }
 
 model amsForm {
-  id        String   @id @default(uuid())
-  title     String   @db.VarChar(255)
-  meta      Json?
-  status    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  categoryId String?
+  title      String   @db.VarChar(255)
+  meta       Json?
+  status     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  stage stage[]
+  category category? @relation(fields: [categoryId], references: [id])
+  stage    stage[]
 
   @@map("ams_form")
 }
@@ -1189,7 +1198,7 @@ model stage {
   categoryId String?
   formId     String
   title      String     @db.VarChar(350)
-  type       stageType?
+  sellType   Int?
   status     Boolean    @default(true)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -1327,7 +1336,7 @@ model fresher {
   serial      String       @id
   admissionId String
   sessionId   String
-  billId      String
+  billId      String?
   programId   String
   majorId     String?
   sessionMode sessionMode?
@@ -1340,33 +1349,33 @@ model fresher {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  admission   admission?   @relation(fields: [admissionId], references: [id])
-  session     session?     @relation(fields: [sessionId], references: [id])
-  bill        bill?        @relation(fields: [billId], references: [id])
-  program     program?     @relation(fields: [programId], references: [id])
-  major       major?       @relation(fields: [majorId], references: [id])
-  category    category?    @relation(fields: [categoryId], references: [id])
-  stepProfile stepProfile? @relation(fields: [serial], references: [serial])
+  admission admission? @relation(fields: [admissionId], references: [id])
+  session   session?   @relation(fields: [sessionId], references: [id])
+  bill      bill?      @relation(fields: [billId], references: [id])
+  program   program?   @relation(fields: [programId], references: [id])
+  major     major?     @relation(fields: [majorId], references: [id])
+  category  category?  @relation(fields: [categoryId], references: [id])
+  student   student?   @relation(fields: [serial], references: [id])
 
   @@map("ams_fresher")
 }
 
 model applicant {
-  serial      String   @id
+  serial      String    @id
   stageId     String
   applyTypeId String
   choiceId    String?
   profileId   String?
-  photo       String?  @db.LongText
+  photo       String?   @db.LongText
   meta        Json?
   gradeValue  Int?
   classValue  Int?
-  admitted    Boolean  @default(false)
-  submitted   Boolean  @default(false)
-  submittedAt DateTime
-  status      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sorted      Boolean   @default(false)
+  submitted   Boolean   @default(false)
+  submittedAt DateTime?
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   stage     stage?       @relation(fields: [stageId], references: [id])
   applyType applyType?   @relation(fields: [applyTypeId], references: [id])
@@ -1377,31 +1386,33 @@ model applicant {
 }
 
 model stepProfile {
-  serial          String   @id
-  titleId         String
-  fname           String   @db.VarChar(255)
-  mname           String?  @db.VarChar(350)
-  lname           String   @db.VarChar(255)
-  gender          String   @db.VarChar(20)
-  dob             DateTime @db.DateTime(3)
-  mstatus         String   @db.VarChar(50)
-  disabilities    String?  @db.VarChar(350)
-  phone           String   @db.VarChar(20)
-  email           String?  @db.VarChar(255)
-  hometown        String?  @db.VarChar(255)
-  residentAddress String?  @db.VarChar(350)
-  postalAddress   String?  @db.VarChar(350)
-  occupation      String?  @db.VarChar(350)
-  workPlace       String?  @db.VarChar(255)
-  bondInstitute   String?  @db.VarChar(255)
-  nationalityId   String?
-  countryId       String?
-  regionId        String?
-  religionId      String?
-  disabilityId    String?
-  bonded          Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  serial            String             @id
+  titleId           String
+  fname             String             @db.VarChar(255)
+  mname             String?            @db.VarChar(350)
+  lname             String             @db.VarChar(255)
+  gender            String             @db.VarChar(20)
+  dob               DateTime           @db.DateTime(3)
+  maritalId         String?            @db.VarChar(50)
+  disabilities      String?            @db.VarChar(350)
+  phone             String             @db.VarChar(20)
+  email             String?            @db.VarChar(255)
+  hometown          String?            @db.VarChar(255)
+  residentAddress   String?            @db.VarChar(350)
+  postalAddress     String?            @db.VarChar(350)
+  occupation        String?            @db.VarChar(350)
+  workPlace         String?            @db.VarChar(255)
+  bondInstitute     String?            @db.VarChar(255)
+  residentialStatus residentialStatus?
+  studyMode         studyMode?
+  nationalityId     String?
+  countryId         String?
+  regionId          String?
+  religionId        String?
+  disabilityId      String?
+  bonded            Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   title           title?            @relation(fields: [titleId], references: [id])
   nationality     country?          @relation("profileNationality", fields: [nationalityId], references: [id])
@@ -1409,7 +1420,7 @@ model stepProfile {
   region          region?           @relation(fields: [regionId], references: [id])
   religion        religion?         @relation(fields: [religionId], references: [id])
   disability      disability?       @relation(fields: [disabilityId], references: [id])
-  fresher         fresher[]
+  marital         marital?          @relation(fields: [maritalId], references: [id])
   applicant       applicant[]
   sortedApplicant sortedApplicant[]
 
@@ -1611,8 +1622,8 @@ model user {
   tag       String   @db.VarChar(50)
   username  String   @db.VarChar(50)
   password  String   @db.VarChar(50)
-  unlockPin String   @db.VarChar(4)
-  locked    Boolean  @default(true)
+  unlockPin String?  @db.VarChar(4)
+  locked    Boolean  @default(false)
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

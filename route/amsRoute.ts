@@ -62,14 +62,49 @@ class AmsRoute {
       this.router.delete('/matriculants/:id', this.controller.deleteMatriculant);
 
       /*  Helpers */
-      this.router.get('/subjects/list', this.controller.fetchMatriculantList);
-      this.router.get('/institutes/list', this.controller.fetchMatriculantList);
-      this.router.get('/certificates/list', this.controller.fetchMatriculantList);
-      this.router.get('/gradeweights/list', this.controller.fetchMatriculantList);
-      this.router.get('/stages/list', this.controller.fetchMatriculantList);
-      this.router.get('/applytypes/list', this.controller.fetchMatriculantList);
-      this.router.get('/applytypes/list', this.controller.fetchMatriculantList);
+      this.router.get('/subjects/list', this.controller.fetchSubjectList);
+      this.router.get('/institutes/list', this.controller.fetchInstituteList);
+      this.router.get('/certificates/list', this.controller.fetchCertList);
+      this.router.get('/gradeweights/list', this.controller.fetchWeightList);
+      this.router.get('/stages/list', this.controller.fetchStageList);
+      this.router.get('/applytypes/list', this.controller.fetchApplytypeList);
+      this.router.get('/prices/list', this.controller.fetchAmsPriceList);
+      
+      // ADMISSSION PORTAL ROUTES
+     
+      /* Step - Configuration  */
+      this.router.get('/step/applicant/:id', this.controller.fetchStepApplicant);
+      this.router.post('/step/applicant', this.controller.saveStepApplicant);
+      /*  Step - Profile */
+      this.router.get('/step/profile/:id', this.controller.fetchStepProfile);
+      this.router.post('/step/profile', this.controller.saveStepProfile);
+      /*  Step - Guardian */
+      this.router.get('/step/guardian/:id', this.controller.fetchStepGuardian);
+      this.router.post('/step/guardian', this.controller.saveStepGuardian);
+      /*  Step - Education */
+      this.router.get('/step/education/:id', this.controller.fetchStepEducation);
+      this.router.post('/step/education', this.controller.saveStepEducation);
+      /*  Step - Result */
+      this.router.get('/step/result/:id', this.controller.fetchStepResult);
+      this.router.post('/step/result', this.controller.saveStepResult);
+      /*  Step - Employment */
+      this.router.get('/step/employment/:id', this.controller.fetchStepEmployment);
+      this.router.post('/step/employment', this.controller.saveStepEmployment);
+      /*  Step - Referee */
+      this.router.get('/step/referee/:id', this.controller.fetchStepReferee);
+      this.router.post('/step/referee', this.controller.saveStepReferee);
+      /*  Step - Document */
+      this.router.get('/step/document/:id', this.controller.fetchStepDocument);
+      this.router.post('/step/document', this.controller.saveStepDocument);
+      /*  Step - Choice */
+      this.router.get('/step/choice/:id', this.controller.fetchStepChoice);
+      this.router.post('/step/choice', this.controller.saveStepChoice);
 
+    
+       
+      
+      
+      
     }
 
    

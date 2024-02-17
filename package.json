@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.9.1",
+    "@types/express-fileupload": "^1.4.4",
     "@types/mysql": "^2.15.21",
     "axios": "^1.4.0",
     "body-parser": "^1.20.2",
@@ -21,6 +22,7 @@
     "express": "^4.18.2",
     "express-fileupload": "^1.4.0",
     "helmet": "^7.0.0",
+    "jimp": "^0.22.10",
     "jsonwebtoken": "^9.0.1",
     "moment": "^2.29.4",
     "mysql2": "^3.6.0",

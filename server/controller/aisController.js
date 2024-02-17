@@ -22,7 +22,145 @@ const ais = new ums_1.PrismaClient();
 const evs = new evsModel_1.default();
 const Auth = new authModel_1.default();
 const sha1 = require('sha1');
+const { customAlphabet } = require("nanoid");
+const pwdgen = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 6);
 class AisController {
+    /* Session */
+    fetchSessionList(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.session.findMany({ where: { status: true }, orderBy: { title: 'asc' } });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchSessions(req, res) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            const { page = 1, pageSize = 9, keyword = '' } = req.query;
+            const offset = (page - 1) * pageSize;
+            let searchCondition = {};
+            try {
+                if (keyword)
+                    searchCondition = {
+                        where: {
+                            OR: [
+                                { title: { contains: keyword } },
+                                { id: { contains: keyword } },
+                            ],
+                        }
+                    };
+                const resp = yield ais.$transaction([
+                    ais.session.count(Object.assign({}, (searchCondition))),
+                    ais.session.findMany(Object.assign(Object.assign({}, (searchCondition)), { skip: offset, take: Number(pageSize) }))
+                ]);
+                if (resp && ((_a = resp[1]) === null || _a === void 0 ? void 0 : _a.length)) {
+                    res.status(200).json({
+                        totalPages: (_b = Math.ceil(resp[0] / pageSize)) !== null && _b !== void 0 ? _b : 0,
+                        totalData: (_c = resp[1]) === null || _c === void 0 ? void 0 : _c.length,
+                        data: resp[1],
+                    });
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    fetchSession(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.session.findUnique({
+                    where: {
+                        id: req.params.id
+                    },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    postSession(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.session.create({
+                    data: Object.assign({}, req.body),
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    updateSession(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.session.update({
+                    where: {
+                        id: req.params.id
+                    },
+                    data: Object.assign({}, req.body)
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    deleteSession(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ais.session.delete({
+                    where: { id: req.params.id }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `No records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
     /* Student */
     fetchStudents(req, res) {
         var _a, _b, _c;
@@ -203,6 +341,76 @@ class AisController {
             catch (error) {
                 console.log(error);
                 return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    stageStudent(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { studentId } = req.body;
+                const password = pwdgen();
+                const isUser = yield ais.user.findFirst({ where: { tag: studentId } });
+                if (isUser)
+                    throw ("Student Portal Account Exists!");
+                const ssoData = { tag: studentId, username: studentId, password: sha1(password) }; // Others
+                // Populate SSO Account
+                const resp = yield ais.user.create({
+                    data: Object.assign(Object.assign({}, ssoData), { group: { connect: { id: 1 } } }),
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json(error);
+            }
+        });
+    }
+    resetStudent(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { studentId } = req.body;
+                const password = pwdgen();
+                const resp = yield ais.user.updateMany({
+                    where: { tag: studentId },
+                    data: { password: sha1(password) },
+                });
+                if (resp === null || resp === void 0 ? void 0 : resp.count) {
+                    res.status(200).json({ password });
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json(error);
+            }
+        });
+    }
+    changePhoto(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { studentId } = req.body;
+                const password = pwdgen();
+                const resp = yield ais.user.updateMany({
+                    where: { tag: studentId },
+                    data: { password: sha1(password) },
+                });
+                if (resp) {
+                    res.status(200).json({ password });
+                }
+                else {
+                    res.status(204).json({ message: `no records found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json(error);
             }
         });
     }
@@ -1561,6 +1769,7 @@ class AisController {
             try {
                 const resp = yield ais.country.findMany({
                     where: { status: true },
+                    orderBy: { createdAt: 'asc' }
                 });
                 if (resp) {
                     res.status(200).json(resp);

@@ -254,6 +254,7 @@ exports.Prisma.StudentScalarFieldEnum = {
   lname: 'lname',
   gender: 'gender',
   dob: 'dob',
+  maritalId: 'maritalId',
   email: 'email',
   phone: 'phone',
   hometown: 'hometown',
@@ -286,6 +287,7 @@ exports.Prisma.StudentScalarFieldEnum = {
   graduateCgpa: 'graduateCgpa',
   graduateCertNo: 'graduateCertNo',
   instituteEmail: 'instituteEmail',
+  instituteAffliate: 'instituteAffliate',
   flagPardon: 'flagPardon',
   accountNet: 'accountNet'
 };
@@ -756,6 +758,7 @@ exports.Prisma.AmsPriceScalarFieldEnum = {
 
 exports.Prisma.AmsFormScalarFieldEnum = {
   id: 'id',
+  categoryId: 'categoryId',
   title: 'title',
   meta: 'meta',
   status: 'status',
@@ -768,7 +771,7 @@ exports.Prisma.StageScalarFieldEnum = {
   categoryId: 'categoryId',
   formId: 'formId',
   title: 'title',
-  type: 'type',
+  sellType: 'sellType',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -879,7 +882,7 @@ exports.Prisma.ApplicantScalarFieldEnum = {
   meta: 'meta',
   gradeValue: 'gradeValue',
   classValue: 'classValue',
-  admitted: 'admitted',
+  sorted: 'sorted',
   submitted: 'submitted',
   submittedAt: 'submittedAt',
   status: 'status',
@@ -895,7 +898,7 @@ exports.Prisma.StepProfileScalarFieldEnum = {
   lname: 'lname',
   gender: 'gender',
   dob: 'dob',
-  mstatus: 'mstatus',
+  maritalId: 'maritalId',
   disabilities: 'disabilities',
   phone: 'phone',
   email: 'email',
@@ -905,6 +908,8 @@ exports.Prisma.StepProfileScalarFieldEnum = {
   occupation: 'occupation',
   workPlace: 'workPlace',
   bondInstitute: 'bondInstitute',
+  residentialStatus: 'residentialStatus',
+  studyMode: 'studyMode',
   nationalityId: 'nationalityId',
   countryId: 'countryId',
   regionId: 'regionId',
@@ -1402,11 +1407,6 @@ exports.transactType = exports.$Enums.transactType = {
   CHARGE: 'CHARGE',
   BILL: 'BILL',
   PAYMENT: 'PAYMENT'
-};
-
-exports.stageType = exports.$Enums.stageType = {
-  SINGLE: 'SINGLE',
-  MULTIPLE: 'MULTIPLE'
 };
 
 exports.sessionMode = exports.$Enums.sessionMode = {

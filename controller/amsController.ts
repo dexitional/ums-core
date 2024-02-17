@@ -3,15 +3,20 @@ import { v4 as uuid } from 'uuid';
 import EvsModel from '../model/evsModel'
 import AuthModel from '../model/authModel'
 import { PrismaClient } from '../prisma/client/ums'
+import { getBillCodePrisma } from "../util/helper";
+const sha1 = require('sha1')
 const { customAlphabet } = require("nanoid");
 const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 8);
+const pwdgen = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 6);
 const digit = customAlphabet("1234567890", 4);
+
 
 const sms = require('../config/sms');
 const evs = new EvsModel();
 const Auth = new AuthModel();
 const ams = new PrismaClient()
 const SENDERID = process.env.UMS_SENDERID;
+const DOMAIN = process.env.UMS_DOMAIN;
 
 
 export default class AmsController {
@@ -574,7 +579,7 @@ export default class AmsController {
                skip: offset,
                take: Number(pageSize),
                include: {
-                  stage: true,
+                  stage: { include: { category:true }},
                   applyType: true,
                   profile: true,
                   choice: { include: { program: true } },
@@ -601,7 +606,7 @@ export default class AmsController {
       try {
          const resp = await ams.applicant.findUnique({
             where: { serial: req.params.id },
-            include: { stage: true, applyType: true, choice: { include: { program: true } }, profile: { include: { title:true, region: true, country: true, religion: true, disability: true }}}
+            include: { stage: true, applyType: true, choice: { include: { program: true } }, profile: { include: { title:true, region: true, country: true, religion: true, disability: true, marital: true }}}
          })
          if(resp){
             res.status(200).json(resp)
@@ -625,7 +630,7 @@ export default class AmsController {
          if(meta?.length){
             for(const row of meta){
                if(row.tag == 'profile'){
-                  const res = await ams.stepProfile.findUnique({ where: { serial: req.params.id}, include: { title: true, disability: true, religion: true, region: true, country: true, nationality: true }})
+                  const res = await ams.stepProfile.findUnique({ where: { serial: req.params.id}, include: { title: true, disability: true, religion: true, region: true, country: true, nationality: true, marital: true }})
                   if(res) output.set('profile',res)
                }
                if(row.tag == 'guardian'){
@@ -750,8 +755,8 @@ export default class AmsController {
                admission: { default: true },
                OR: [
                   { serial: { contains: keyword } },
-                  { choice1: { program: { title: { contains: keyword }}} },
-                  { choice2: { program: { title: { contains: keyword }}} },
+                  { choice1: { program: { longName: { contains: keyword }}} },
+                  { choice2: { program: { longName: { contains: keyword }}} },
                ],
             }
          }
@@ -806,7 +811,9 @@ export default class AmsController {
    async postShortlist(req: Request,res: Response) {
       try {
          const { serial } = req.body
-         // const { admissionId,stageId,applyTypeId,categoryId,choice1Id,choice2Id } = req.body
+         const sorted:any = await ams.sortedApplicant.findFirst({ where:{ serial }})
+         if(sorted) throw("Applicant already shortlisted!")
+
          const voucher:any = await ams.voucher.findFirst({ where:{ serial }})
          const admission:any = await ams.admission.findFirst({ where:{ default: true }})
          const applicant:any = await ams.applicant.findFirst({ where:{ serial }, include:{ stage: true }})
@@ -831,6 +838,12 @@ export default class AmsController {
                ... serial && ({ profile: { connect: { serial }}}),
             },
          })
+         const ups = await ams.applicant.update({
+            where: { serial },
+            data: { sorted: true }
+         })
+
+         
          if(resp){
             res.status(200).json(resp)
          } else {
@@ -839,7 +852,7 @@ export default class AmsController {
          
       } catch (error: any) {
          console.log(error)
-         return res.status(500).json({ message: error.message }) 
+         return res.status(500).json({ message: error }) 
       }
    }
 
@@ -931,7 +944,7 @@ export default class AmsController {
                skip: offset,
                take: Number(pageSize),
                include: {
-                  admission: true, program: true, bill: true, session: true, major: true, category: true 
+                  admission: true, program: true, major: true, category: true, student: true 
                }
             })
          ]);
@@ -956,7 +969,7 @@ export default class AmsController {
          const resp = await ams.fresher.findUnique({
             where: { serial: req.params.id },
             include: {
-               admission: true, program: true, bill: { include:{ bankacc: true }}, session: true, major: true, category: { include: { admissionLetter: true }} 
+               admission: { include: { sortedApplicant: { include: { applyType:true }}}}, student:true, program: true, bill: { include:{ bankacc: true }}, session: true, major: true, category: { include: { admissionLetter: true }} 
             }
          })
          if(resp){
@@ -971,23 +984,64 @@ export default class AmsController {
    }
 
    async postMatriculant(req: Request,res: Response) {
-      try {
-         const { admissionId,sessionId,billId,categoryId,programId,majorId, } = req.body
-         delete req.body.admissionId; delete req.body.sessionId;
-         delete req.body.billId; delete req.body.programId;
-         delete req.body.majorId; delete req.body.categoryId;
-      
-         const resp = await ams.sortedApplicant.create({
-            data: {
-               ... req.body,
-               ... admissionId && ({ admission: { connect: { id: admissionId }}}),
-               ... sessionId && ({ session: { connect: { id: sessionId }}}),
-               ... billId && ({ bill: { connect: { id: billId }}}),
-               ... categoryId && ({ category: { connect: { id: categoryId }}}),
+         try {
+         const { serial,programId,semesterNum,sessionMode } = req.body
+         const semcode = getBillCodePrisma(Number(semesterNum))
+         const sorted:any = await ams.sortedApplicant.findFirst({ where:{ serial }, include: { profile: true, admission:{ include: { session: true}} }})
+         const { sellType, admission:{ id:admissionId, session:{ id:sessionId } }, categoryId, profile: { titleId,countryId,regionId,religionId,disabilityId,maritalId,fname,lname,mname,gender,dob,hometown,phone,email,residentAddress  } } = sorted ?? null;
+         const bill:any = await ams.bill.findFirst({ where:{ programId,sessionId, type: countryId == '96b0a1d5-7899-4b9a-bcbe-7a72eee6572c' ? 'GH':'INT', OR: semcode }})
+         const guardian:any = await ams.stepGuardian.findFirst({ where:{ serial }})
+         // Check email 
+         const emailUser = `${fname.trim().toLowerCase()}.${lname.trim().toLowerCase()}`;
+         const fetchEmail = await ams.student.findMany({ where: { instituteEmail:{ contains: emailUser }}})
+         // Data for Population
+         const instituteEmail = `${fname}.${lname}${fetchEmail.length ? fetchEmail.length+1 : '' }@${DOMAIN}`;
+         const username = serial; /* const username = instituteEmail; // AUCC */
+         const password = pwdgen();
+         const studentData = { id:serial,fname,mname,lname,gender,dob,semesterNum,hometown,phone,email,address:residentAddress,instituteEmail,guardianName:`${guardian?.fname} ${guardian?.mname && guardian?.mname+' '}${guardian?.lname}`, guardianPhone: guardian?.phone }
+         const fresherData = { sellType, semesterNum, sessionMode, username, password }
+         // const ssoData = { tag:serial, username:instituteEmail, password:sha1(), } // AUCC 
+         const ssoData = { tag:serial, username, password:sha1(password) }  // Others
+         
+         // Populate Student Information
+         const student = await ams.student.create({
+            data:{
+               ... studentData,
                ... programId && ({ program: { connect: { id: programId }}}),
-               ... majorId && ({ major: { connect: { id: majorId }}}),
+               ... titleId && ({ title: { connect: { id: titleId }}}),
+               ... countryId && ({ country: { connect: { id: countryId }}}),
+               ... regionId && ({ region: { connect: { id: regionId }}}),
+               ... religionId && ({ religion: { connect: { id: religionId }}}),
+               ... maritalId && ({ marital: { connect: { id: maritalId }}}),
+               ... disabilityId && ({ disability: { connect: { id: disabilityId }}}),
+            } 
+         })
+         // Populate Fresher Information
+         const resp = await ams.fresher.create({
+            data: {
+               ... fresherData,
+               ... admissionId && ({ admission: { connect: { id: admissionId }}}),
+               ... programId && ({ program: { connect: { id: programId }}}),
+               ... bill && ({ bill: { connect: { id: bill?.id }}}),
+               ... sessionId && ({ session: { connect: { id: sessionId }}}),
+               ... categoryId && ({ category: { connect: { id: categoryId }}}),
+               ... serial && ({ student: { connect: { serial }}}),
+               ... student && ({ student: { connect: { id: student?.id }}}),
             },
          })
+         // Populate SSO Account
+         const sso = await ams.user.create({
+            data: {
+               ... ssoData,
+               group: { connect: { id: 1 }},
+            },
+         })
+         // Update Applicant Status 
+         const ups = await ams.sortedApplicant.update({
+            where: { serial },
+            data: { admitted: true },
+         })
+
          if(resp){
             res.status(200).json(resp)
          } else {
@@ -1032,13 +1086,613 @@ export default class AmsController {
 
    async deleteMatriculant(req: Request,res: Response) {
       try {
+         const serial = req.params.id;
+          // Remove Matriculant Data
          const resp = await ams.fresher.delete({
-            where: { serial: req.params.id }
+            where: { serial }
          })
+         // Remove Student Data
+         const student = await ams.student.delete({
+            where: { id:serial }
+         })
+         // Remove SSO Account
+         const sso = await ams.user.deleteMany({
+            where: { tag:serial }
+         })
+         // Update Applicant Status 
+         const ups = await ams.sortedApplicant.update({
+            where: { serial },
+            data: { admitted: false },
+         })
+        
          if(resp){
             res.status(200).json(resp)
          } else {
             res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Helpers */
+   async fetchSubjectList(req: Request,res: Response) {
+      try {
+         const resp = await ams.subject.findMany({
+            where: { status: true },
+            orderBy: { createdAt: 'asc' }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchInstituteList(req: Request,res: Response) {
+      try {
+         const resp = await ams.instituteCategory.findMany({
+            where: { status: true },
+            orderBy: { createdAt: 'asc' }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchCertList(req: Request,res: Response) {
+      try {
+         const resp = await ams.certCategory.findMany({
+            where: { status: true },
+            orderBy: { createdAt: 'asc' }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchWeightList(req: Request,res: Response) {
+      try {
+         const resp = await ams.gradeWeight.findMany({
+            where: { status: true },
+            orderBy: { createdAt: 'asc' }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchStageList(req: Request,res: Response) {
+      try {
+         const resp = await ams.stage.findMany({
+            where: { status: true },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchApplytypeList(req: Request,res: Response) {
+      try {
+         const resp = await ams.applyType.findMany({
+            where: { status: true },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchAmsPriceList(req: Request,res: Response) {
+      try {
+         const resp = await ams.amsPrice.findMany({
+            where: { status: true },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+
+   /* Step Applicant - Configuration */
+   async fetchStepApplicant(req: Request,res: Response) {
+      try {
+         const resp = await ams.applicant.findUnique({
+            where: { serial: req.params.id },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepApplicant(req: Request,res: Response) {
+      try {
+         const { serial,stageId,applyTypeId,categoryId } = req.body
+         delete req.body.stageId; delete req.body.serial;
+         delete req.body.applyTypeId; 
+         delete req.body.categoryId; 
+         // Application Form Schema for Chosen Category
+         const form = await ams.amsForm.findFirst({ where: { categoryId }})
+         if(form) req.body.meta = form?.meta
+
+         const resp = await ams.applicant.upsert({
+            where: { serial },
+            create: { 
+               ...req.body, 
+               serial, 
+               ... stageId && ({ stage: { connect: { id: stageId }}}),
+               ... applyTypeId && ({ applyType: { connect: { id: applyTypeId }}}),
+            },
+            update: {
+               ...req.body, 
+               ... stageId && ({ stage: { connect: { id: stageId }}}),
+               ... applyTypeId && ({ applyType: { connect: { id: applyTypeId }}}),
+            }
+         })
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Profile */
+   async fetchStepProfile(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepProfile.findUnique({
+            where: { serial: req.params.id },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepProfile(req: Request,res: Response) {
+      try {
+         const { serial,titleId,regionId,religionId,countryId,nationalityId,maritalId,disabilityId } = req.body
+         delete req.body.titleId; delete req.body.regionId;
+         delete req.body.religionId; delete req.body.countryId;
+         delete req.body.nationalityId; delete req.body.maritalId;
+         delete req.body.disabilityId;  delete req.body.serial;
+         
+         const resp = await ams.stepProfile.upsert({
+            where: { serial },
+            create: {
+               serial,  
+               applicant: { connect: { profileId: serial }},
+               ...req.body, 
+               ... titleId && ({ title: { connect: { id: titleId }}}),
+               ... regionId && ({ region: { connect: { id: regionId }}}),
+               ... religionId && ({ religion: { connect: { id: religionId }}}),
+               ... countryId && ({ country: { connect: { id: countryId }}}),
+               ... nationalityId && ({ nationality: { connect: { id: nationalityId }}}),
+               ... maritalId && ({ marital: { connect: { id: maritalId }}}),
+               ... disabilityId && ({ marital: { connect: { id: disabilityId }}}),
+               
+            },
+            update: {
+               ...req.body, 
+               ... titleId && ({ title: { connect: { id: titleId }}}),
+               ... regionId && ({ region: { connect: { id: regionId }}}),
+               ... religionId && ({ religion: { connect: { id: religionId }}}),
+               ... countryId && ({ country: { connect: { id: countryId }}}),
+               ... nationalityId && ({ nationality: { connect: { id: nationalityId }}}),
+               ... maritalId && ({ marital: { connect: { id: maritalId }}}),
+               ... disabilityId && ({ marital: { connect: { id: disabilityId }}}),
+            }
+         })
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Guardian */
+   async fetchStepGuardian(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepGuardian.findUnique({
+            where: { serial: req.params.id },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepGuardian(req: Request,res: Response) {
+      try {
+         const { serial,titleId,relationId } = req.body
+         delete req.body.titleId; delete req.body.serial;
+         delete req.body.relationId; ;
+
+         const resp = await ams.stepGuardian.upsert({
+            where: { serial },
+            create: { 
+               ...req.body, 
+               serial, 
+               ... titleId && ({ title: { connect: { id: titleId }}}),
+               ... relationId && ({ relation: { connect: { id: relationId }}}),
+            },
+            update: {
+               ...req.body, 
+               ... titleId && ({ title: { connect: { id: titleId }}}),
+               ... relationId && ({ relation: { connect: { id: relationId }}}),
+            }
+         })
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Education */
+   async fetchStepEducation(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepEducation.findMany({
+            where: { serial: req.params.id },
+         })
+         if(resp?.length){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepEducation(req: Request,res: Response) {
+      try {
+         const data = req.body;
+         const resp = await ams.stepEducation.upsert(data?.map((row:any) => {
+            const { id,instituteCategoryId,certCategoryId } = row;
+            delete row?.instituteCategoryId; delete row?.id;
+            delete row?.certCategoryId; 
+            
+            return ({
+               where: { id: (id || null) },
+               create: { 
+                  ...row, 
+                  ... instituteCategoryId && ({ instituteCategory: { connect: { id: instituteCategoryId }}}),
+                  ... certCategoryId && ({ certCategory: { connect: { id: certCategoryId }}}),
+               },
+               update: {
+                  ...row, 
+                  ... instituteCategoryId && ({ title: { connect: { id: instituteCategoryId }}}),
+                  ... certCategoryId && ({ relation: { connect: { id: certCategoryId }}}),
+               }
+            })
+         }))
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+
+   /* Step Result */
+   async fetchStepResult(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepResult.findMany({
+            where: { serial: req.params.id },
+            include: { grades: true }
+         })
+         if(resp?.length){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepResult(req: Request,res: Response) {
+      try {
+         const data = req.body;
+         // Results 
+         const resp = await ams.stepEducation.upsert(data?.map((row:any) => {
+            const { id,certCategoryId } = row;
+            delete row?.id; delete row?.certCategoryId; 
+            // Grades
+            const newGrades = row.grades.map((item:any) => {
+               const { resultId,gradeWeightId,subjectId } = item;
+               delete item?.resultId; delete item?.gradeWeightId; delete item?.subjectId; 
+               return ({
+                  ...item, 
+                  ...resultId && ({ result: { connect: { id: resultId }}}),
+                  ...gradeWeightId && ({ gradeWeight: { connect: { id: gradeWeightId }}}),
+                  ...subjectId && ({ subject: { connect: { id: subjectId }}}),
+               })
+            })
+
+            return ({
+               where: { id: (id || null) },
+               create: { 
+                  ...row, 
+                  ... certCategoryId && ({ certCategory: { connect: { id: certCategoryId }}}),
+                  grades: { create: newGrades }
+               },
+               update: {
+                  ...row, 
+                  ... certCategoryId && ({ certCategory: { connect: { id: certCategoryId }}}),
+                  grades: { upsert: newGrades }
+               }
+            })
+         }))
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Employment */
+   async fetchStepEmployment(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepEmployment.findMany({
+            where: { serial: req.params.id },
+         })
+         if(resp?.length){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepEmployment(req: Request,res: Response) {
+      try {
+         const data = req.body;
+         const resp = await ams.stepEmployment.upsert(data?.map((row:any) => {
+            const { id } = row;
+            return ({
+               where: { id: (id || null) },
+               create: row,
+               update: row
+            })
+         }))
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Document */
+   async fetchStepDocument(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepDocument.findMany({
+            where: { serial: req.params.id },
+         })
+         if(resp?.length){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepDocument(req: Request,res: Response) {
+      try {
+         const data = req.body;
+         const resp = await ams.stepDocument.upsert(data?.map((row:any) => {
+            const { id,documentCategoryId } = row;
+            delete row?.documentCategoryId; delete row?.id;
+          
+            return ({
+               where: { id: (id || null) },
+               create: { 
+                  ...row, 
+                  ... documentCategoryId && ({ documentCategory: { connect: { id: documentCategoryId }}}),
+               },
+               update: {
+                  ...row, 
+                  ... documentCategoryId && ({ documentCategory: { connect: { id: documentCategoryId }}}),
+               }
+            })
+         }))
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Choice */
+   async fetchStepChoice(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepChoice.findMany({
+            where: { serial: req.params.id },
+         })
+         if(resp?.length){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepChoice(req: Request,res: Response) {
+      try {
+         const data = req.body;
+         const resp = await ams.stepChoice.upsert(data?.map((row:any) => {
+            const { id,programId,majorId } = row;
+            delete row?.programId; delete row?.programId; delete row?.id;
+          
+            return ({
+               where: { id: (id || null) },
+               create: { 
+                  ...row, 
+                  ... programId && ({ program: { connect: { id: programId }}}),
+                  ... majorId && ({ major: { connect: { id: majorId }}}),
+               },
+               update: {
+                  ...row, 
+                  ... programId && ({ program: { connect: { id: programId }}}),
+                  ... majorId && ({ major: { connect: { id: majorId }}}),
+               }
+            })
+         }))
+         console.log(resp)
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+    /* Step Referee */
+    async fetchStepReferee(req: Request,res: Response) {
+      try {
+         const resp = await ams.stepReferee.findMany({
+            where: { serial: req.params.id },
+         })
+         if(resp?.length){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async saveStepReferee(req: Request,res: Response) {
+      try {
+         const data = req.body;
+         const resp = await ams.stepReferee.upsert(data?.map((row:any) => {
+            const { id, titleId } = row;
+            delete row?.titleId; delete row?.id;
+            
+            return ({
+               where: { id: (id || null) },
+               create: { 
+                  ...row, 
+                  ... titleId && ({ title: { connect: { id: titleId }}}),
+               },
+               update: {
+                  ...row, 
+                  ... titleId && ({ title: { connect: { id: titleId }}}),
+               }
+            })
+         }))
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
          }
       } catch (error: any) {
          console.log(error)

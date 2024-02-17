@@ -25,7 +25,10 @@ class Routes {
         app.use(body_parser_1.default.urlencoded({ limit: '50mb', extended: true }));
         app.use("/public", express_1.default.static("public"));
         app.use(cors());
-        app.use(fileUpload());
+        //app.use(fileUpload());
+        app.use(fileUpload({
+            limits: { fileSize: 50 * 1024 * 1024 },
+        }));
         // Compress Responses
         app.use(compression());
         // Security Guards

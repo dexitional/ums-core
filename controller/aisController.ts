@@ -10,11 +10,145 @@ const ais = new PrismaClient()
 const evs = new EvsModel();
 const Auth = new AuthModel();
 const sha1 = require('sha1');
+const { customAlphabet } = require("nanoid");
+const pwdgen = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 6);
+
 
 
 export default class AisController {
      
-     /* Student */
+     /* Session */
+     async fetchSessionList(req: Request,res: Response) {
+         try {
+            const resp = await ais.session.findMany({ where: { status: true }, orderBy: { title:'asc' } })
+            if(resp){
+            res.status(200).json(resp)
+            } else {
+            res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async fetchSessions(req: Request,res: Response) {
+       const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
+       const offset = (page - 1) * pageSize;
+       let searchCondition = { }
+         try {
+            if(keyword) searchCondition = { 
+               where: { 
+               OR: [
+                  { title: { contains: keyword } },
+                  { id: { contains: keyword } },
+               ],
+               }
+            }
+            const resp = await ais.$transaction([
+               ais.session.count({
+                  ...(searchCondition),
+               }),
+               ais.session.findMany({
+                  ...(searchCondition),
+                  skip: offset,
+                  take: Number(pageSize),
+               })
+            ]);
+            
+            if(resp && resp[1]?.length){
+               res.status(200).json({
+                  totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+                  totalData: resp[1]?.length,
+                  data: resp[1],
+               })
+            } else {
+               res.status(204).json({ message: `no records found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async fetchSession(req: Request,res: Response) {
+         try {
+            const resp = await ais.session.findUnique({
+               where: { 
+                  id: req.params.id 
+               },
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async postSession(req: Request,res: Response) {
+         try {
+         
+         const resp = await ais.session.create({
+            data: {
+               ...req.body,
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+         
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async updateSession(req: Request,res: Response) {
+         try {
+         const resp = await ais.session.update({
+            where: { 
+               id: req.params.id 
+            },
+            data: {
+               ...req.body,
+            }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
+     async deleteSession(req: Request,res: Response) {
+         try {
+            const resp = await ais.session.delete({
+               where: {  id: req.params.id  }
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `No records found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+     
+   
+   
+   /* Student */
      async fetchStudents(req: Request,res: Response) {
         const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
         const offset = (page - 1) * pageSize;
@@ -186,6 +320,72 @@ export default class AisController {
             console.log(error)
             return res.status(500).json({ message: error.message }) 
          }
+     }
+
+     async stageStudent(req: Request,res: Response) {
+      try {
+        const { studentId } = req.body
+        const password = pwdgen();
+        const isUser = await ais.user.findFirst({ where: { tag: studentId }})
+        if(isUser) throw("Student Portal Account Exists!")
+        const ssoData = { tag:studentId, username:studentId, password:sha1(password) }  // Others
+         // Populate SSO Account
+         const resp = await ais.user.create({
+            data: {
+               ... ssoData,
+               group: { connect: { id: 1 }},
+            },
+         })
+        if(resp){
+           res.status(200).json(resp)
+        } else {
+           res.status(204).json({ message: `no records found` })
+        }
+        
+       } catch (error: any) {
+          console.log(error)
+          return res.status(500).json(error) 
+       }
+     }
+
+     async resetStudent(req: Request,res: Response) {
+      try {
+        const { studentId } = req.body
+        const password = pwdgen();
+        const resp = await ais.user.updateMany({
+            where: { tag: studentId },
+            data: { password: sha1(password)},
+        })
+        if(resp?.count){
+           res.status(200).json({ password })
+        } else {
+           res.status(204).json({ message: `no records found` })
+        }
+        
+      } catch (error: any) {
+          console.log(error)
+          return res.status(500).json(error) 
+      }
+     }
+
+     async changePhoto(req: Request,res: Response) {
+      try {
+        const { studentId } = req.body
+        const password = pwdgen();
+        const resp = await ais.user.updateMany({
+            where: { tag: studentId },
+            data: { password: sha1(password)},
+        })
+        if(resp){
+           res.status(200).json({ password })
+        } else {
+           res.status(204).json({ message: `no records found` })
+        }
+        
+      } catch (error: any) {
+          console.log(error)
+          return res.status(500).json(error) 
+      }
      }
 
      async postStudent(req: Request,res: Response) {
@@ -1499,6 +1699,7 @@ export default class AisController {
       try {
          const resp = await ais.country.findMany({
             where: { status: true },
+            orderBy: { createdAt:'asc'}
          })
          if(resp){
            res.status(200).json(resp)

@@ -12,12 +12,25 @@ class AisRoute {
         this.initializeRoute();
     }
     initializeRoute() {
+        /* Calendar Sessions */
+        this.router.get('/sessions', this.controller.fetchSessions);
+        this.router.get('/sessions/list', this.controller.fetchSessionList);
+        // this.router.get('/students/:id', this.controller.fetchStudent);
+        // this.router.get('/students/:id/transcript', this.controller.fetchStudentTranscript);
+        // this.router.get('/students/:id/finance', this.controller.fetchStudentFinance);
+        // this.router.get('/students/:id/activity', this.controller.fetchStudentActivity);
+        // this.router.post('/students', this.controller.postStudent);
+        // this.router.patch('/students/:id', this.controller.updateStudent);
+        // this.router.delete('/students/:id', this.controller.deleteStudent);
         /* Student */
         this.router.get('/students', this.controller.fetchStudents);
         this.router.get('/students/:id', this.controller.fetchStudent);
         this.router.get('/students/:id/transcript', this.controller.fetchStudentTranscript);
         this.router.get('/students/:id/finance', this.controller.fetchStudentFinance);
         this.router.get('/students/:id/activity', this.controller.fetchStudentActivity);
+        this.router.post('/students/stage', this.controller.stageStudent);
+        this.router.post('/students/reset', this.controller.resetStudent);
+        this.router.post('/students/photo', this.controller.changePhoto);
         this.router.post('/students', this.controller.postStudent);
         this.router.patch('/students/:id', this.controller.updateStudent);
         this.router.delete('/students/:id', this.controller.deleteStudent);
