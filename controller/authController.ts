@@ -25,6 +25,7 @@ export default class AuthController {
            // Locate Single-Sign-On Record or Student account
            //const isUser = await Auth.withCredential(username, password);
            const isUser:any = await sso.user.findFirst({ where: { username, password: sha1(password)}, include: { group: { select: { title: true }}}});
+           const isApplicant:any = await sso.voucher.findFirst({ where: { serial: username, pin: password }, include: { admission: true }});
            if (isUser) {
                 let { id, tag, groupId, group: { title: groupName } } = isUser;
                 let user;
@@ -32,20 +33,18 @@ export default class AuthController {
                    const data = await sso.support.findUnique({ where: { supportNo: Number(tag) } }); 
                    if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName }
                 
-                } else if(groupId == 3){ // Applicant
-                   const data = await sso.voucher.findFirst({ where: { serial: "", pin: "" } }); 
-                   if(data) user = { tag, fname: "Admission", mname: "", lname: "Applicant" , mail: "", descriptor: "Applicant", department: "", group_id: groupId, group_name: groupName }
-
                 } else if(groupId == 2){ // Staff
-                   const data = await sso.staff.findUnique({ where: { staffNo: Number(tag) }, include: { promotion: { select: { job: true }}} }); 
-                   if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName }
+                   const data = await sso.staff.findUnique({ where: { staffNo: tag }, include: { promotion: { select: { job: true }}, job: true, unit: true }, }); 
+                   if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: data?.job?.title, department: data?.unit?.title, group_id: groupId, group_name: groupName }
 
                 } else { // Student
                    const data = await sso.student.findUnique({ where: { id : tag }, include: { program: { select: { longName: true }}} }); 
                    if(data) user = { tag, fname: data?.fname, mname: data?.mname, lname: data?.lname, mail: data?.email, descriptor: data?.program?.longName, department: "", group_id: groupId, group_name: groupName }
                 }
                 const photo = `https://cdn.ucc.edu.gh/photos/?tag=${encodeURIComponent(tag)}`;
-                let roles:any = []; // All App Roles
+                const roles:any = await sso.userRole.findMany({ where: { userId: id }, include: { appRole: { select: { title: true, app: true }}}});
+           
+                //let roles:any = []; // All App Roles
                 // let evsRoles = await Auth.fetchEvsRoles(tag); // Only Electa Roles
                 // Construct UserData
                 const userdata: any = {
@@ -58,10 +57,30 @@ export default class AuthController {
                 // Send Response to Client
                 res.status(200).json({ success: true, data: userdata, token });
             
+            } else if(isApplicant) {
+                const data:any = await sso.stepProfile.findFirst({ where: { serial: username }, include: { applicant: { select: { photo: true }}} }); 
+                let user;
+                if(data){
+                  user = { tag: username, fname: data?.fname, mname: data?.mname, lname: data.lname , mail: data.email , descriptor: "Applicant", department: "None", group_id: 3, group_name: "Applicant" }
+                } else {
+                  user = { tag: username, fname: "Admission", mname: "", lname: "Applicant" , mail: "", descriptor: "Applicant", department: "None", group_id: 3, group_name: "Applicant" }
+                }
+                const photo = data ? data?.applicant?.photo : `https://cdn.ucc.edu.gh/photos/?tag=${encodeURIComponent(username)}`;
+                // Construct UserData
+                const userdata: any = {
+                  user,
+                  roles: [],
+                  photo
+                }
+                // Generate Session Token & 
+                const token = jwt.sign(userdata || {}, process.env.SECRET, { expiresIn: 60 * 60});
+                // Send Response to Client
+                res.status(200).json({ success: true, data: userdata, token });
+            
             } else {
                 res.status(401).json({
-                   success: false,
-                   message: "Invalid Username or Password!",
+                  success: false,
+                  message: "Invalid Credentials!",
                 });
             }
         
@@ -174,35 +193,53 @@ export default class AuthController {
        }
    }
 
+  /* Photo Management */
+  // async fetchPhoto(req: Request,res: Response) {
+  //   try {
+  //       res.setHeader("Access-Control-Allow-Origin", "*");
+  //       let mtag:any = req?.query?.tag;
+  //           mtag = mtag.trim().toLowerCase();
+  //       const isUser = await sso.user.findFirst({ where: { tag: mtag }}); // Biodata
+  //       console.log(mtag,isUser)
+  //       if (isUser) {
+  //           let { groupId } = isUser, spath;
+  //           const tag = mtag.replaceAll("/", "").replaceAll("_", "");
+  //           if(groupId == 4)       spath = path.join(__dirname, "/../../public/cdn/photo/support/");
+  //           else if(groupId == 3)  spath = path.join(__dirname, "/../../public/cdn/photo/applicant/");
+  //           else if(groupId == 2)  spath = path.join(__dirname, "/../../public/cdn/photo/staff/");
+  //           else if(groupId == 1)  spath = path.join(__dirname, "/../../public/cdn/photo/student/");
+  //           else spath = path.join(__dirname, "/../../public/cdn/");
+          
+  //           const file = `${spath}${tag}.jpg`;
+  //           const file2 = `${spath}${tag}.jpeg`;
+  //           console.log("TEST:  ",file)
+  //           try {
+  //             if(fs.statSync(file)) return res.status(200).sendFile(file);
+  //             else if(fs.statSync(file2)) return res.status(200).sendFile(file2);
+  //             else return res.status(200).sendFile(`${spath}/none.png`);
+  //           } catch (e) {
+  //             return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/")+`/none.png`);
+  //           }
+  //       } else {
+  //           res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
+  //       }
+  //   } catch(err) {
+  //       console.log(err)
+  //       res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
+  //   }
+  // }
 
   async fetchPhoto(req: Request,res: Response) {
     try {
         res.setHeader("Access-Control-Allow-Origin", "*");
         let mtag:any = req?.query?.tag;
             mtag = mtag.trim().toLowerCase();
-        const isUser = await sso.user.findFirst({ where: { tag: mtag }}); // Biodata
-        if (isUser) {
-            let { groupId } = isUser, spath;
-            const tag = mtag.replaceAll("/", "").replaceAll("_", "");
-            if(groupId == 4)       spath = path.join(__dirname, "/../../public/cdn/photo/support/");
-            else if(groupId == 3)  spath = path.join(__dirname, "/../../public/cdn/photo/applicant/");
-            else if(groupId == 2)  spath = path.join(__dirname, "/../../public/cdn/photo/staff/");
-            else if(groupId == 1)  spath = path.join(__dirname, "/../../public/cdn/photo/student/");
-            else spath = path.join(__dirname, "/../../public/cdn/");
-          
-            const file = `${spath}${tag}.jpg`;
-            const file2 = `${spath}${tag}.jpeg`;
-            console.log(file)
-            try {
-              if(fs.statSync(file)) return res.status(200).sendFile(file);
-              else if(fs.statSync(file2)) return res.status(200).sendFile(file2);
-              else return res.status(200).sendFile(`${spath}/none.png`);
-            } catch (e) {
-              return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/")+`/none.png`);
-            }
-        } else {
-            res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
-        }
+        const tag = mtag.replaceAll("/", "").replaceAll("_", "");
+        if(fs.statSync(path.join(__dirname, "/../../public/cdn/photo/staff/",`${tag}.jpg`)))  res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/staff/",`${tag}.jpg`));
+        else if(fs.statSync(path.join(__dirname, "/../../public/cdn/photo/student/",`${tag}.jpg`)))  res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/student/",`${tag}.jpg`));
+        else if(fs.statSync(path.join(__dirname, "/../../public/cdn/photo/support/",`${tag}.jpg`)))  res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/support/",`${tag}.jpg`));
+        else if(fs.statSync(path.join(__dirname, "/../../public/cdn/photo/applicant/",`${tag}.jpg`)))  res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/applicant/",`${tag}.jpg`));
+        else res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/")+`/none.png`);
     } catch(err) {
         console.log(err)
         res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
@@ -216,6 +253,12 @@ export default class AuthController {
     const photo:any = req.files.photo;
     const { tag } = req.body;
     const isUser:any = await sso.user.findFirst({ where: { tag }}); 
+    
+    if(!isUser){
+      const stphoto = `${req.protocol}://${req.get("host")}/api/auth/photos/?tag=${tag.toString().toLowerCase()}&cache=${Math.random() * 1000}`;
+      return res.status(200).json({ success: true, data: stphoto }); 
+    }
+
     let { groupId } = isUser;   
     var mpath;
     switch (groupId) {

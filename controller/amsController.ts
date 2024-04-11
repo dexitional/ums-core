@@ -818,10 +818,9 @@ export default class AmsController {
          const admission:any = await ams.admission.findFirst({ where:{ default: true }})
          const applicant:any = await ams.applicant.findFirst({ where:{ serial }, include:{ stage: true }})
          const choice:any = await ams.stepChoice.findFirst({ where:{ serial, id: { not: applicant?.choiceId } }})
-         const education:any = await ams.stepEducation.findFirst({ where:{ serial  }})
+         //const education:any = await ams.stepEducation.findFirst({ where:{ serial  }})
 
          const { stageId,applyTypeId, classValue,gradeValue, stage:{ categoryId }, choiceId:choice1Id } = applicant ?? null;
-         const { id: choice2Id } = choice ?? null;
          const { id: admissionId } = admission ?? null;
          const { sellType } = voucher ?? null;
          const dt = { serial, sellType,classValue, gradeValue, admitted: false }
@@ -833,7 +832,7 @@ export default class AmsController {
                ... stageId && ({ stage: { connect: { id: stageId }}}),
                ... applyTypeId && ({ applyType: { connect: { id: applyTypeId }}}),
                ... choice1Id && ({ choice1: { connect: { id: choice1Id }}}),
-               ... choice2Id && ({ choice2: { connect: { id: choice2Id }}}),
+               ... choice && ({ choice2: { connect: { id: choice?.id }}}),
                ... categoryId && ({ category: { connect: { id: categoryId }}}),
                ... serial && ({ profile: { connect: { serial }}}),
             },
@@ -892,7 +891,12 @@ export default class AmsController {
             where: { serial: req.params.id }
          })
          if(resp){
+            const ups = await ams.applicant.update({
+               where: { serial: req.params.id },
+               data: { sorted: false }
+            })
             res.status(200).json(resp)
+            
          } else {
             res.status(204).json({ message: `No records found` })
          }
@@ -1233,6 +1237,22 @@ export default class AmsController {
       }
    }
 
+   async fetchAmsDocList(req: Request,res: Response) {
+      try {
+            const resp = await ams.documentCategory.findMany({
+            where: { status: true },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
 
    /* Step Applicant - Configuration */
    async fetchStepApplicant(req: Request,res: Response) {
@@ -1311,12 +1331,13 @@ export default class AmsController {
          delete req.body.religionId; delete req.body.countryId;
          delete req.body.nationalityId; delete req.body.maritalId;
          delete req.body.disabilityId;  delete req.body.serial;
+         delete req.body.id;
          
          const resp = await ams.stepProfile.upsert({
             where: { serial },
             create: {
                serial,  
-               applicant: { connect: { profileId: serial }},
+               //applicant: { connect: { profileId: serial }},
                ...req.body, 
                ... titleId && ({ title: { connect: { id: titleId }}}),
                ... regionId && ({ region: { connect: { id: regionId }}}),
@@ -1419,13 +1440,14 @@ export default class AmsController {
    async saveStepEducation(req: Request,res: Response) {
       try {
          const data = req.body;
-         const resp = await ams.stepEducation.upsert(data?.map((row:any) => {
+         await ams.stepEducation.deleteMany({ where: { serial: req.body[0].serial }});
+         const resp = await Promise.all(data?.map(async (row:any) => {
             const { id,instituteCategoryId,certCategoryId } = row;
             delete row?.instituteCategoryId; delete row?.id;
             delete row?.certCategoryId; 
             
-            return ({
-               where: { id: (id || null) },
+            return await ams.stepEducation.upsert({
+               where: { id: (id || '') },
                create: { 
                   ...row, 
                   ... instituteCategoryId && ({ instituteCategory: { connect: { id: instituteCategoryId }}}),
@@ -1433,8 +1455,8 @@ export default class AmsController {
                },
                update: {
                   ...row, 
-                  ... instituteCategoryId && ({ title: { connect: { id: instituteCategoryId }}}),
-                  ... certCategoryId && ({ relation: { connect: { id: certCategoryId }}}),
+                  ... instituteCategoryId && ({ instituteCategory: { connect: { id: instituteCategoryId }}}),
+                  ... certCategoryId && ({ certCategory: { connect: { id: certCategoryId }}}),
                }
             })
          }))
@@ -1472,8 +1494,12 @@ export default class AmsController {
    async saveStepResult(req: Request,res: Response) {
       try {
          const data = req.body;
+         console.log(data)
+         await ams.stepResult.deleteMany({ where: { serial: req.body[0].serial }});
+         await ams.stepGrade.deleteMany({ where: { serial: req.body[0].serial }});
+         
          // Results 
-         const resp = await ams.stepEducation.upsert(data?.map((row:any) => {
+         const resp = await Promise.all(data?.map(async(row:any) => {
             const { id,certCategoryId } = row;
             delete row?.id; delete row?.certCategoryId; 
             // Grades
@@ -1487,9 +1513,8 @@ export default class AmsController {
                   ...subjectId && ({ subject: { connect: { id: subjectId }}}),
                })
             })
-
-            return ({
-               where: { id: (id || null) },
+            return await ams.stepResult.upsert({
+               where: { id: (id || '') },
                create: { 
                   ...row, 
                   ... certCategoryId && ({ certCategory: { connect: { id: certCategoryId }}}),
@@ -1498,7 +1523,7 @@ export default class AmsController {
                update: {
                   ...row, 
                   ... certCategoryId && ({ certCategory: { connect: { id: certCategoryId }}}),
-                  grades: { upsert: newGrades }
+                  grades: { create: newGrades }
                }
             })
          }))
@@ -1574,12 +1599,13 @@ export default class AmsController {
    async saveStepDocument(req: Request,res: Response) {
       try {
          const data = req.body;
-         const resp = await ams.stepDocument.upsert(data?.map((row:any) => {
+         await ams.stepDocument.deleteMany({ where: { serial: req.body[0].serial }});
+         const resp = await Promise.all(data?.map(async (row:any) => {
             const { id,documentCategoryId } = row;
             delete row?.documentCategoryId; delete row?.id;
           
-            return ({
-               where: { id: (id || null) },
+            return await ams.stepDocument.upsert({
+               where: { id: (id || '') },
                create: { 
                   ...row, 
                   ... documentCategoryId && ({ documentCategory: { connect: { id: documentCategoryId }}}),
@@ -1622,12 +1648,13 @@ export default class AmsController {
    async saveStepChoice(req: Request,res: Response) {
       try {
          const data = req.body;
-         const resp = await ams.stepChoice.upsert(data?.map((row:any) => {
+         await ams.stepChoice.deleteMany({ where: { serial: req.body[0].serial }});
+         const resp = await Promise.all(data?.map( async (row:any) => {
             const { id,programId,majorId } = row;
             delete row?.programId; delete row?.programId; delete row?.id;
           
-            return ({
-               where: { id: (id || null) },
+            return await ams.stepChoice.upsert({
+               where: { id: (id || '') },
                create: { 
                   ...row, 
                   ... programId && ({ program: { connect: { id: programId }}}),
@@ -1688,6 +1715,31 @@ export default class AmsController {
                }
             })
          }))
+         
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   /* Step Review */
+   async saveStepReview(req: Request,res: Response) {
+      try {
+         const { serial,choiceId } = req.body;
+         delete req.body?.choiceId;
+         console.log(req.body)
+         const resp = await ams.applicant.update({
+            where: { serial },
+            data: {
+               ...req.body,
+               ...choiceId && ({ choice: { connect: { id: choiceId }}}),
+            },
+         })
          
          if(resp){
             res.status(200).json(resp)

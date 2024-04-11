@@ -6,6 +6,8 @@ import { PrismaClient } from '../prisma/client/ums'
 import moment from "moment";
 //import sha1 from "sha1";
 import { getBillCodePrisma, getGrade, getGradePoint } from "../util/helper";
+import path from "path";
+import fs from "fs";
 const ais = new PrismaClient()
 const evs = new EvsModel();
 const Auth = new AuthModel();
@@ -35,7 +37,7 @@ export default class AisController {
      async fetchSessions(req: Request,res: Response) {
        const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
        const offset = (page - 1) * pageSize;
-       let searchCondition = { }
+       let searchCondition:any = { orderBy: { createdAt: 'desc'} }
          try {
             if(keyword) searchCondition = { 
                where: { 
@@ -43,7 +45,8 @@ export default class AisController {
                   { title: { contains: keyword } },
                   { id: { contains: keyword } },
                ],
-               }
+               },
+               orderBy: { createdAt: 'desc'}
             }
             const resp = await ais.$transaction([
                ais.session.count({
@@ -246,7 +249,7 @@ export default class AisController {
                   session: { select: { title: true, } },
                   course:{ select:{ title:true } },
                }, 
-               orderBy: { session: { createdAt: 'asc' }}
+               orderBy: [{ session: { createdAt: 'asc' }}, {courseId:'asc'}]
             })
             
            
@@ -387,6 +390,34 @@ export default class AisController {
           return res.status(500).json(error) 
       }
      }
+
+     async generateIndex(req: Request,res: Response) {
+      try {
+        const { studentId } = req.body;
+        let indexno;
+        const student = await ais.student.findUnique({
+            where: { id: studentId },
+            include: {  program:{ select:{ prefix:true }}}, 
+        })
+        if(student?.indexno) throw("Index number exists for student!")
+        const count = student?.progCount?.toString().length == 1 ? `00${student?.progCount}`  : student?.progCount?.toString().length == 2 ? `0${student?.progCount}` : student?.progCount;
+        indexno = `${student?.program?.prefix}/${moment(student?.entryDate || new Date()).format("YY")}/${count}`
+        const resp = await ais.student.update({
+            where: { id: studentId },
+            data: { indexno },
+        })
+        if(resp){
+           res.status(200).json({ indexno })
+        } else {
+           res.status(204).json({ message: `no records found` })
+        }
+      } catch (error: any) {
+          console.log(error)
+          return res.status(500).json(error) 
+      }
+     }
+
+    
 
      async postStudent(req: Request,res: Response) {
        try {
@@ -1485,7 +1516,6 @@ export default class AisController {
      try {
          const { unitId,schemeId } = req.body
          delete req.body.schemeId;    delete req.body.unitId;
-         console.log(req.body)
          const resp = await ais.program.update({
          where: { id: req.params.id },
          data: {
@@ -1563,7 +1593,6 @@ export default class AisController {
                },
              }, 
          })
-         console.log(resp)
          
          if(resp){
            res.status(200).json(resp)
@@ -1586,12 +1615,11 @@ export default class AisController {
                where: { 
                   OR: [
                      { title: { contains: keyword } },
-                     { id: { contains: keyword } },
+                     { code: { contains: keyword } },
                   ],
                },
-               include: { 
-                  level1:{ select: { title: true, code: true }}
-               }, 
+               include: { level1:true }, 
+            //   orderBy: { createdAt: 'asc'}
             }
             const resp = await ais.$transaction([
                ais.unit.count({
@@ -1619,12 +1647,30 @@ export default class AisController {
          }
      }
 
+     async fetchUnitList(req: Request,res: Response) {
+         try {
+            const resp = await ais.unit.findMany({
+               where: { status: true },
+               include: { level1:true }, 
+            })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(204).json({ message: `no record found` })
+            }
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+         }
+     }
+
      async fetchUnit(req: Request,res: Response) {
          try {
             const resp = await ais.unit.findUnique({
                where: { 
                   id: req.params.id 
                },
+               include: { level1:true }, 
             })
             if(resp){
                res.status(200).json(resp)
@@ -1639,9 +1685,12 @@ export default class AisController {
 
      async postUnit(req: Request,res: Response) {
       try {
+            const { level1Id } = req.body
+            delete req.body.level1Id;
             const resp = await ais.unit.create({
                data: {
                   ...req.body,
+                  ... level1Id && ({ level1: { connect: { id: level1Id }}}),
                },
             })
             if(resp){
@@ -1658,12 +1707,16 @@ export default class AisController {
 
      async updateUnit(req: Request,res: Response) {
          try {
+            const { level1Id } = req.body
+            delete req.body.level1Id;
             const resp = await ais.unit.update({
                where: { 
                   id: req.params.id 
                },
                data: {
                   ...req.body,
+                  ... level1Id && ({ level1: { connect: { id: level1Id }}}),
+                  ... !level1Id && ({ level1: { disconnect: true }}),
                }
             })
             if(resp){
@@ -1692,6 +1745,764 @@ export default class AisController {
             return res.status(500).json({ message: error.message }) 
          }
      }
+
+     /* Jobs */
+     async fetchJobs(req: Request,res: Response) {
+      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+               OR: [
+                  { title: { contains: keyword } },
+                  { id: { contains: keyword } },
+               ],
+            },
+            include: { 
+               level1:{ select: { title: true, code: true }}
+            }, 
+            
+         }
+         const resp = await ais.$transaction([
+            ais.job.count({
+               ...(searchCondition),
+            }),
+            ais.job.findMany({
+               ...(searchCondition),
+               skip: offset,
+               take: Number(pageSize),
+            })
+         ]);
+         
+         if(resp && resp[1]?.length){
+            res.status(200).json({
+               totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+               totalData: resp[1]?.length,
+               data: resp[1],
+            })
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async fetchJobList(req: Request,res: Response) {
+      try {
+         const resp = await ais.job.findMany({
+            where: { status: true }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async fetchJob(req: Request,res: Response) {
+      try {
+         const resp = await ais.job.findUnique({
+            where: { 
+               id: req.params.id 
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async postJob(req: Request,res: Response) {
+   try {
+         const resp = await ais.job.create({
+            data: {
+               ...req.body,
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+         
+      } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async updateJob(req: Request,res: Response) {
+      try {
+         const resp = await ais.job.update({
+            where: { 
+               id: req.params.id 
+            },
+            data: {
+               ...req.body,
+            }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async deleteJob(req: Request,res: Response) {
+      try {
+         const resp = await ais.job.delete({
+            where: {  id: req.params.id  }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+
+   /* Sheets */
+   async fetchSheets(req: Request,res: Response) {
+      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+               OR: [
+                  { title: { contains: keyword } },
+                  { id: { contains: keyword } },
+               ],
+            },
+            include: { 
+               session:{ select: { title: true }},
+               program:{ select: { longName: true, category: true }},
+               course:{ select: { title: true, id: true, creditHour: true }},
+               major:{ select: { longName: true }},
+               assignee:true,
+            }, 
+            
+         }
+         const resp = await ais.$transaction([
+            ais.sheet.count({
+               ...(searchCondition),
+            }),
+            ais.sheet.findMany({
+               ...(searchCondition),
+               skip: offset,
+               take: Number(pageSize),
+            })
+         ]);
+         
+         if(resp && resp[1]?.length){
+            res.status(200).json({
+               totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+               totalData: resp[1]?.length,
+               data: resp[1],
+            })
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async stageSheet(req: Request,res: Response) {
+      try {
+         // Fetch Active Semester
+         const { sessionId } = req.body
+         // Fetch Mounted Courses all Program Levels
+         const mounts = await ais.structure.findMany({ where: { status: true }})
+         // Upsert Bulk into Sheet 
+         
+
+
+
+         // const resp = await ais.job.findMany({
+         //    where: { status: true }
+         // })
+         // if(resp){
+         //    res.status(200).json(resp)
+         // } else {
+         //    res.status(204).json({ message: `no record found` })
+         // }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async fetchSheet(req: Request,res: Response) {
+      try {
+         const resp = await ais.sheet.findUnique({
+            where: { id: req.params.id },
+            include: { 
+               session:{ select: { title: true,  }},
+               program:{ select: { longName: true, category: true }},
+               course:{ select: { title: true, id: true, creditHour: true }},
+               major:{ select: { longName: true }},
+               assignee:true,
+            }, 
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async fetchMySheet(req: Request,res: Response) {
+   try {
+      const resp = await ais.sheet.findUnique({
+         where: { id: req.params.id },
+      })
+      if(resp){
+         res.status(200).json(resp)
+      } else {
+         res.status(204).json({ message: `no record found` })
+      }
+   } catch (error: any) {
+      console.log(error)
+      return res.status(500).json({ message: error.message }) 
+   }
+}
+
+  async postSheet(req: Request,res: Response) {
+   try {
+         const resp = await ais.job.create({
+            data: {
+               ...req.body,
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+         
+      } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async updateSheet(req: Request,res: Response) {
+      try {
+         const resp = await ais.job.update({
+            where: { 
+               id: req.params.id 
+            },
+            data: {
+               ...req.body,
+            }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async deleteSheet(req: Request,res: Response) {
+      try {
+         const resp = await ais.job.delete({
+            where: {  id: req.params.id  }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  /* App Roles */
+
+   async fetchARoleList(req: Request,res: Response) {
+      try {
+         const resp = await ais.appRole.findMany({
+            where: { status: true },
+            include: { app:{ select: { title: true }}
+            }, 
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+  
+  /* User Roles */
+
+  async fetchURoleList(req: Request,res: Response) {
+   try {
+     const { staffId } = req.body
+     const resp = await ais.userRole.findMany({
+        where: { user: { tag: staffId.toString()} },
+        include: { appRole: { select: { title: true, app: true }}}
+     })
+     if(resp?.length){
+        res.status(200).json(resp)
+     } else {
+        res.status(204).json({ message: `no records found` })
+     }
+     
+   } catch (error: any) {
+       console.log(error)
+       return res.status(500).json(error) 
+   }
+}
+
+
+   async fetchURoles(req: Request,res: Response) {
+      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+               OR: [
+                  { title: { contains: keyword } },
+                  { id: { contains: keyword } },
+               ],
+            },
+            include: { 
+               level1:{ select: { title: true, code: true }}
+            }, 
+         }
+         const resp = await ais.$transaction([
+            ais.userRole.count({
+               ...(searchCondition),
+            }),
+            ais.userRole.findMany({
+               ...(searchCondition),
+               skip: offset,
+               take: Number(pageSize),
+            })
+         ]);
+         
+         if(resp && resp[1]?.length){
+            res.status(200).json({
+               totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+               totalData: resp[1]?.length,
+               data: resp[1],
+            })
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  
+  async fetchURole(req: Request,res: Response) {
+      try {
+         const resp = await ais.userRole.findUnique({
+            where: { 
+               id: Number(req.params.id) 
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async postURole(req: Request,res: Response) {
+   try {
+         const { appRoleId, staffNo } = req.body
+         delete req.body.appRoleId; delete req.body.staffNo;
+         let allowRole = true; let resp;
+
+         const user = await ais.user.findFirst({ where: { tag: staffNo.toString() }})
+         const uroles = await ais.userRole.findMany({ where: { userId: user?.id }, include: { appRole: { select: { app:true }} }})
+         const urole = await ais.appRole.findFirst({ where: {  id: Number(appRoleId) }, include: { app: true }})
+         
+         if(uroles.length &&  uroles.find(r => [ urole?.app?.tag ].includes(r?.appRole?.app?.tag))) allowRole = false;
+         if(!allowRole) throw(`Privilege exists for app`)
+
+         resp = await ais.userRole.create({
+            data: {
+              ...req.body,
+              ... appRoleId && ({ appRole: { connect: { id: Number(appRoleId) }}}),
+              ... user && ({ user: { connect: { id: user?.id }}}),
+            },
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no records found` })
+         }
+         
+      } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async updateURole(req: Request,res: Response) {
+      try {
+         const resp = await ais.userRole.update({
+            where: { 
+               id: Number(req.params.id) 
+            },
+            data: {
+               ...req.body,
+            }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+            console.log(error)
+            return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async deleteURole(req: Request,res: Response) {
+      try {
+         const resp = await ais.userRole.delete({
+            where: {  id: Number(req.params.id)  }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `No records found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+  async checkUser(req: Request,res: Response) {
+      try {
+         const { userId } = req.body
+         const resp = await ais.user.findFirst({ where: { tag: userId.toString() }})
+         res.status(200).json(!!resp)
+         
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+  }
+
+
+
+     /* Staff */
+     async fetchStaffs(req: Request,res: Response) {
+      const { page = 1, pageSize = 6, keyword = '' } :any = req.query;
+      const offset = (page - 1) * pageSize;
+      let searchCondition = { }
+      try {
+         if(keyword) searchCondition = { 
+            where: { 
+             OR: [
+                { fname: { contains: keyword } },
+                { lname: { contains: keyword } },
+                { phone: { contains: keyword } },
+                { email: { contains: keyword } },
+              ],
+            }
+          }
+          const resp = await ais.$transaction([
+             ais.staff.count({
+                ...(searchCondition),
+             }),
+             ais.staff.findMany({
+                ...(searchCondition),
+                skip: offset,
+                take: Number(pageSize),
+                include: { 
+                  title:{ select: { label: true }},
+                  country:{ select: { longName: true }},
+                  region:{ select: { title: true }},
+                  religion:{ select: { title: true }},
+                  marital:{ select: { title: true }},
+                  unit:{ select: { title: true }},
+                  job:{ select: { title: true }},
+                  //promotion:{ select: { job: { select: { title:true }}}},
+               }
+             })
+          ]);
+         
+          if(resp && resp[1]?.length){
+            res.status(200).json({
+                totalPages: Math.ceil(resp[0]/pageSize) ?? 0,
+                totalData: resp[1]?.length,
+                data: resp[1],
+            })
+          } else {
+            res.status(204).json({ message: `no records found` })
+          }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async fetchStaff(req: Request,res: Response) {
+       try {
+          const resp = await ais.staff.findUnique({
+             where: { 
+                 staffNo: req.params.id
+             },
+             include: { 
+               title:{ select: { label: true }},
+               country:{ select: { longName: true }},
+               region:{ select: { title: true }},
+               religion:{ select: { title: true }},
+               marital:{ select: { title: true }},
+               unit:{ select: { title: true }},
+               job:{ select: { title: true }},
+               //promotion:{ select: { job: { select: { title:true }}}},
+            }
+          })
+          if(resp){
+            res.status(200).json(resp)
+          } else {
+            res.status(204).json({ message: `no record found` })
+          }
+       } catch (error: any) {
+          console.log(error)
+          return res.status(500).json({ message: error.message }) 
+       }
+   }
+
+   async stageStaff(req: Request,res: Response) {
+    try {
+      const { staffId } = req.body;
+      const password = pwdgen();
+      const isUser = await ais.user.findFirst({ where: { tag: staffId.toString(), groupId:  2 }})
+      if(isUser) throw("Staff User Account Exists!")
+      const ssoData = { tag:staffId.toString(), username:staffId.toString(), password:sha1(password) }  // Others
+       // Populate SSO Account
+       const resp = await ais.user.create({
+          data: {
+             ... ssoData,
+             group: { connect: { id: 2 }},
+          },
+       })
+      if(resp){
+         // Send Password By SMS
+         // Send Password By Email
+         res.status(200).json({ ...resp, password })
+      } else {
+         res.status(204).json({ message: `no records found` })
+      }
+      
+     } catch (error: any) {
+        console.log(error)
+        return res.status(500).json(error) 
+     }
+   }
+
+   async resetStaff(req: Request,res: Response) {
+    try {
+      const { staffId } = req.body
+      const password = pwdgen();
+      const resp = await ais.user.updateMany({
+          where: { tag: staffId.toString(), groupId:  2 },
+          data: { password: sha1(password)},
+      })
+      if(resp?.count){
+         res.status(200).json({ password })
+      } else {
+         res.status(204).json({ message: `no records found` })
+      }
+      
+    } catch (error: any) {
+        console.log(error)
+        return res.status(500).json(error) 
+    }
+   }
+
+   async staffRole(req: Request,res: Response) {
+      try {
+        const { staffId } = req.body
+        const resp = await ais.userRole.findMany({
+           where: { user: { tag: staffId.toString()} },
+           include: { appRole: { select: { title: true, app: true }}}
+        })
+        if(resp?.length){
+           res.status(200).json(resp)
+        } else {
+           res.status(204).json({ message: `no records found` })
+        }
+        
+      } catch (error: any) {
+          console.log(error)
+          return res.status(500).json(error) 
+      }
+   }
+
+   async changeStaffPhoto(req: Request,res: Response) {
+    try {
+      const { staffId } = req.body
+      const password = pwdgen();
+      const resp = await ais.user.updateMany({
+          where: { tag: staffId },
+          data: { password: sha1(password)},
+      })
+      if(resp){
+         res.status(200).json({ password })
+      } else {
+         res.status(204).json({ message: `no records found` })
+      }
+      
+    } catch (error: any) {
+        console.log(error)
+        return res.status(500).json(error) 
+    }
+   }
+
+
+   async postStaff(req: Request,res: Response) {
+     try {
+       const { titleId,maritalId,countryId,regionId,religionId,unitId,jobId,staffNo } = req.body
+       delete req.body.titleId;    delete req.body.maritalId;
+       delete req.body.countryId;  delete req.body.regionId;
+       delete req.body.religionId; delete req.body.unitId;
+       delete req.body.jobId;   
+      //  delete req.body.staffNo; 
+       
+       const resp = await ais.staff.create({
+         data: {
+           ... req.body,
+           ... maritalId && ({ marital: { connect: { id: maritalId }}}),
+           ... titleId && ({ title: { connect: { id:titleId }}}),
+           ... countryId && ({ country: { connect: { id:countryId }}}),
+           ... regionId && ({ region: { connect: { id:regionId }}}),
+           ... religionId && ({ religion: { connect: { id:religionId }}}),
+           ... unitId && ({ unit: { connect: { id:unitId }}}),
+           ... jobId && ({ job: { connect: { id:jobId }}}),
+         }
+       })
+       if(resp){
+          res.status(200).json(resp)
+       } else {
+          res.status(204).json({ message: `no records found` })
+       }
+       
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async updateStaff(req: Request,res: Response) {
+     try {
+        const { titleId,maritalId,countryId,regionId,religionId,unitId,jobId } = req.body
+        delete req.body.titleId;    delete req.body.maritalId;
+        delete req.body.countryId;  delete req.body.regionId;
+        delete req.body.religionId; delete req.body.unitId;
+        delete req.body.jobId; //   
+        req.body.staffNo = req.body.staffNo.toString()
+        
+        const resp = await ais.staff.update({
+          where: { staffNo: req.params.id },
+          data: {
+            ... req.body,
+            ... maritalId && ({ marital: { connect: { id: maritalId }}}),
+            ... titleId && ({ title: { connect: { id:titleId }}}),
+            ... countryId && ({ country: { connect: { id:countryId }}}),
+            ... regionId && ({ region: { connect: { id:regionId }}}),
+            ... religionId && ({ religion: { connect: { id:religionId }}}),
+            ... unitId && ({ unit: { connect: { id:unitId }}}),
+            ... jobId && ({ job: { connect: { id:jobId }}}),
+          }
+        })
+        if(resp){
+          if(req.params.id != req.body.staffNo){
+              // Update SSO User with New (Tag/Username)
+              await ais.user.updateMany({ where: { tag: req.params.id, groupId: 2 }, data: { tag: req.body.staffNo, username: req.body.staffNo }});
+              // Update Photo FileName
+              const tag = req.params.id.split("/").join("").trim().toLowerCase();
+              const dtag = req.body.staffNo.split("/").join("").trim().toLowerCase();
+              var file = path.join(__dirname,"/../../public/cdn/photo/staff/",tag+'.jpg');
+              //var file2 = path.join(__dirname,"/../../public/cdn/photo/staff/",tag+'.jpeg');
+              var dfile = path.join(__dirname,"/../../public/cdn/photo/staff/",dtag+'.jpg');
+              var stats = fs.statSync(file);
+             //var stats2 = fs.statSync(file2);
+              if (stats) {
+                fs.renameSync(file,dfile);
+              } 
+            //   else if (stats2) {
+            //     fs.renameSync(file2,dfile);
+            //   }
+    
+          }   res.status(200).json(resp)
+        
+        } else {
+          res.status(204).json({ message: `No records found` })
+        }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
+   async deleteStaff(req: Request,res: Response) {
+    try {
+       const resp = await ais.staff.delete({
+         where: {  staffNo: req.params.id  }
+       })
+       if(resp){
+         res.status(200).json(resp)
+       } else {
+         res.status(204).json({ message: `No records found` })
+       }
+    } catch (error: any) {
+        console.log(error)
+        return res.status(500).json({ message: error.message }) 
+    }
+   }
 
      
      /* Helpers */
@@ -1854,6 +2665,23 @@ export default class AisController {
       }
      }
 
+     async fetchAppRoles(req: Request,res: Response) {
+      try {
+         const resp = await ais.appRole.findMany()
+         if(resp){
+           res.status(200).json(resp)
+         } else {
+           res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+     }
+
+
+     
+
 
 
 
@@ -1863,10 +2691,12 @@ export default class AisController {
     async runData(req: Request,res: Response) {
       try { 
          let resp;
-         const subjects:any = require('../../util/subjects.json');
+         // const subjects:any = require('../../util/subjects.json');
          // const structure:any = require('../../util/structure.json');
          // const courses:any = require('../../util/courses2.json');
-         // const students = require('../../util/students.json');
+         //  const students = require('../../util/student2.json');
+         //  const staff = require('../../util/staff.json');
+          const scores = require('../../util/scores.json');
          // if(courses.length){
          //   for(const course of courses){
          //      console.log(course)
@@ -1893,7 +2723,7 @@ export default class AisController {
          //             fname: student.fname?.toUpperCase(),
          //             mname: student.mname?.toUpperCase(),
          //             lname: student.lname?.toUpperCase(),
-         //             dob: moment(student?.dob,'DD/MM/YYYY').toDate(),
+         //             //dob: moment(student?.dob,'DD/MM/YYYY').toDate(),
          //             semesterNum: Number(student.semesterNum),
          //             phone: student.phone,
          //             email: student.email,
@@ -1914,6 +2744,45 @@ export default class AisController {
          //          }
          //      })
          //   }
+         // }
+
+         // if(staff.length){
+         //    for(const st of staff){
+         //       console.log(st)
+         //       const ins = await ais.staff.create({
+         //           data: {
+         //              staffNo: st?.staffNo,
+         //              fname: st.fname?.toUpperCase(),
+         //              mname: st.mname?.toUpperCase(),
+         //              lname: st.lname?.toUpperCase(),
+         //              dob: moment(st?.dob,'DD/MM/YYYY').toDate(),
+         //              phone: st.phone,
+         //              email: st.email,
+         //              gender: st.gender,
+         //              qualification: st.qualification,
+         //              religion: {
+         //                 connect: {
+         //                    id: st.religionId
+         //                 }
+         //              },
+         //              unit: {
+         //                connect: {
+         //                   id: st.unitId
+         //                }
+         //             },
+         //             job: {
+         //                connect: {
+         //                   id: st.jobId
+         //                }
+         //             },
+         //              country: {
+         //                 connect: {
+         //                    id: "96b0a1d5-7899-4b9a-bcbe-7a72eee6572c"
+         //                 }
+         //              },
+         //           }
+         //       })
+         //    }
          // }
          
          // if(structure.length){
@@ -1942,9 +2811,48 @@ export default class AisController {
          //   }
          // }
 
+         if(scores.length){
+            for(const st of scores){
+               console.log(st)
+               const ins = await ais.assessment.create({
+                   data: {
+                      //indexno: st?.indexno,
+                      credit: Number(st.credit),
+                      semesterNum: Number(st.semesterNum),
+                      classScore: parseFloat(st.classScore),
+                      examScore: parseFloat(st.examScore),
+                      totalScore: parseFloat(st.totalScore),
+                      type: 'N',
+                      session: {
+                         connect: {
+                            id: st.sessionId
+                         }
+                      },
+                      scheme: {
+                        connect: {
+                           id: st.schemeId
+                        }
+                     },
+                     course: {
+                        connect: {
+                           id: st.courseId?.trim()
+                        }
+                     },
+                     student: {
+                        connect: {
+                           indexno: st.indexno?.trim()
+                        }
+                     },
+                     
+                   }
+               })
+            }
+         }
+         
 
-         if(subjects){
-           res.status(200).json(subjects)
+
+         if(scores){
+           res.status(200).json(scores)
          } else {
            res.status(204).json({ message: `no record found` })
          }

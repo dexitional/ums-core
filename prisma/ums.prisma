@@ -678,13 +678,13 @@ model assessment {
   indexno     String
   credit      Int
   semesterNum Int
-  classScore  Int?
-  examScore   Int?
-  totalScore  Int
+  classScore  Float?
+  examScore   Float?
+  totalScore  Float
   type        scoreType
-  scoreA      Int?
-  scoreB      Int?
-  scoreC      Int?
+  scoreA      Float?
+  scoreB      Float?
+  scoreC      Float?
   status      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -733,16 +733,16 @@ model sheet {
   unitId        String?
   programId     String
   majorId       String?
-  assignStaffId Int?
-  assessorId    Int?
-  certifierId   Int?
+  assignStaffId String?
+  assessorId    String?
+  certifierId   String?
   semesterNum   Int
-  sessionMode   String   @db.VarChar(50)
-  studentCount  Int
-  completeRatio Float
-  assessed      Boolean  @default(true)
-  certified     Boolean  @default(true)
-  finalized     Boolean  @default(true)
+  sessionMode   String?  @db.VarChar(50)
+  studentCount  Int?     @default(0)
+  completeRatio Float?
+  assessed      Boolean  @default(false)
+  certified     Boolean  @default(false)
+  finalized     Boolean  @default(false)
   status        Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -755,6 +755,7 @@ model sheet {
   assessor  staff?   @relation("assessor", fields: [assessorId], references: [staffNo])
   certifier staff?   @relation("certifier", fields: [certifierId], references: [staffNo])
 
+  @@index([sessionId, programId, courseId, semesterNum, majorId])
   @@map("ais_sheet")
 }
 
@@ -770,7 +771,7 @@ model transwift {
   mode       pickMode
   version    transwiftType   @default(SOFTCOPY)
   status     transwiftStatus @default(PENDED)
-  issuerId   Int?
+  issuerId   String?
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 
@@ -1194,14 +1195,14 @@ model amsForm {
 }
 
 model stage {
-  id         String     @id @default(uuid())
+  id         String   @id @default(uuid())
   categoryId String?
   formId     String
-  title      String     @db.VarChar(350)
+  title      String   @db.VarChar(350)
   sellType   Int?
-  status     Boolean    @default(true)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  status     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   category category? @relation(fields: [categoryId], references: [id])
   form     amsForm?  @relation(fields: [formId], references: [id])
@@ -1694,13 +1695,14 @@ model job {
   updatedAt       DateTime      @updatedAt
 
   promotion promotion[]
+  staff     staff[]
 
   @@map("hrs_job")
 }
 
 model promotion {
   id            String        @id @default(uuid())
-  staffNo       Int?
+  staffNo       String?
   jobId         String?
   scaleId       String?
   staffCategory staffCategory
@@ -1744,7 +1746,7 @@ model postinfo {
 
 model position {
   id            String        @id @default(uuid())
-  staffNo       Int?
+  staffNo       String?
   postinfoId    String?
   scaleId       String?
   staffCategory staffCategory
@@ -1767,7 +1769,7 @@ model position {
 
 model transfer {
   id         String    @id @default(uuid())
-  staffNo    Int?
+  staffNo    String?
   fromUnitId String?
   toUnitId   String?
   reason     String?   @db.VarChar(350)
@@ -1805,7 +1807,7 @@ model scale {
 }
 
 model staff {
-  staffNo         Int       @id @default(autoincrement())
+  staffNo         String    @id @unique
   titleId         String?
   fname           String    @db.VarChar(255)
   mname           String?   @db.VarChar(350)
@@ -1823,12 +1825,14 @@ model staff {
   ghcardNo        String?   @db.VarChar(255)
   residentAddress String?   @db.VarChar(350)
   occupation      String?   @db.VarChar(350)
-  instituteEmail  String?
+  qualification   String?   @db.VarChar(650)
+  instituteEmail  String?   @db.VarChar(350)
   countryId       String?
   regionId        String?
   religionId      String?
-  bankId          String?
   unitId          String?
+  jobId           String?
+  jobMode         String?   @db.VarChar(350)
   promotionId     String?
   positionId      String?
   firstofferId    String?
@@ -1842,6 +1846,7 @@ model staff {
   region     region?    @relation(fields: [regionId], references: [id])
   religion   religion?  @relation(fields: [religionId], references: [id])
   unit       unit?      @relation(fields: [unitId], references: [id])
+  job        job?       @relation(fields: [jobId], references: [id])
   firstoffer promotion? @relation("firstoffer", fields: [firstofferId], references: [id])
   promotion  promotion? @relation("promotion", fields: [promotionId], references: [id])
   position   position?  @relation("position", fields: [positionId], references: [id])

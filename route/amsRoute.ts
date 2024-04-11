@@ -69,6 +69,7 @@ class AmsRoute {
       this.router.get('/stages/list', this.controller.fetchStageList);
       this.router.get('/applytypes/list', this.controller.fetchApplytypeList);
       this.router.get('/prices/list', this.controller.fetchAmsPriceList);
+      this.router.get('/documents/list', this.controller.fetchAmsDocList);
       
       // ADMISSSION PORTAL ROUTES
      
@@ -99,6 +100,8 @@ class AmsRoute {
       /*  Step - Choice */
       this.router.get('/step/choice/:id', this.controller.fetchStepChoice);
       this.router.post('/step/choice', this.controller.saveStepChoice);
+      /*  Step - Review */
+      this.router.post('/step/review', this.controller.saveStepReview);
 
     
        

@@ -1,14 +1,15 @@
 export const getGrade = (num: any,grades: any) => {
     if(num == null) return 'I'
     num = parseFloat(num)
-    const vs = grades && grades.find((row: any) => row.min <= num && num <= row.max)
+    const vs = grades && grades.find((row: any) => parseFloat(row.min) <= parseFloat(num) && parseFloat(num) <= parseFloat(row.max))
+    console.log(num,vs)
     return (vs && vs.grade) || 'I';
 }
 
 export const getGradePoint = (num: any,grades: any) => {
     if(num == null) return 'I'
     num = parseFloat(num)
-    const vs = grades && grades.find((row: any) => row.min <= num && num <= row.max)
+    const vs = grades && grades.find((row: any) => parseFloat(row.min) <= parseFloat(num) && parseFloat(num) <= parseFloat(row.max))
     return (vs && vs.gradepoint) || 'I';
 }
 

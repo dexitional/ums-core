@@ -845,14 +845,13 @@ class AmsController {
                 const admission = yield ams.admission.findFirst({ where: { default: true } });
                 const applicant = yield ams.applicant.findFirst({ where: { serial }, include: { stage: true } });
                 const choice = yield ams.stepChoice.findFirst({ where: { serial, id: { not: applicant === null || applicant === void 0 ? void 0 : applicant.choiceId } } });
-                const education = yield ams.stepEducation.findFirst({ where: { serial } });
+                //const education:any = await ams.stepEducation.findFirst({ where:{ serial  }})
                 const { stageId, applyTypeId, classValue, gradeValue, stage: { categoryId }, choiceId: choice1Id } = applicant !== null && applicant !== void 0 ? applicant : null;
-                const { id: choice2Id } = choice !== null && choice !== void 0 ? choice : null;
                 const { id: admissionId } = admission !== null && admission !== void 0 ? admission : null;
                 const { sellType } = voucher !== null && voucher !== void 0 ? voucher : null;
                 const dt = { serial, sellType, classValue, gradeValue, admitted: false };
                 const resp = yield ams.sortedApplicant.create({
-                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, dt), admissionId && ({ admission: { connect: { id: admissionId } } })), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })), choice1Id && ({ choice1: { connect: { id: choice1Id } } })), choice2Id && ({ choice2: { connect: { id: choice2Id } } })), categoryId && ({ category: { connect: { id: categoryId } } })), serial && ({ profile: { connect: { serial } } })),
+                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, dt), admissionId && ({ admission: { connect: { id: admissionId } } })), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })), choice1Id && ({ choice1: { connect: { id: choice1Id } } })), choice && ({ choice2: { connect: { id: choice === null || choice === void 0 ? void 0 : choice.id } } })), categoryId && ({ category: { connect: { id: categoryId } } })), serial && ({ profile: { connect: { serial } } })),
                 });
                 const ups = yield ams.applicant.update({
                     where: { serial },
@@ -905,6 +904,10 @@ class AmsController {
                     where: { serial: req.params.id }
                 });
                 if (resp) {
+                    const ups = yield ams.applicant.update({
+                        where: { serial: req.params.id },
+                        data: { sorted: false }
+                    });
                     res.status(200).json(resp);
                 }
                 else {
@@ -1248,6 +1251,25 @@ class AmsController {
             }
         });
     }
+    fetchAmsDocList(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ams.documentCategory.findMany({
+                    where: { status: true },
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
     /* Step Applicant - Configuration */
     fetchStepApplicant(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -1330,9 +1352,10 @@ class AmsController {
                 delete req.body.maritalId;
                 delete req.body.disabilityId;
                 delete req.body.serial;
+                delete req.body.id;
                 const resp = yield ams.stepProfile.upsert({
                     where: { serial },
-                    create: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ serial, applicant: { connect: { profileId: serial } } }, req.body), titleId && ({ title: { connect: { id: titleId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), countryId && ({ country: { connect: { id: countryId } } })), nationalityId && ({ nationality: { connect: { id: nationalityId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ marital: { connect: { id: disabilityId } } })),
+                    create: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ serial }, req.body), titleId && ({ title: { connect: { id: titleId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), countryId && ({ country: { connect: { id: countryId } } })), nationalityId && ({ nationality: { connect: { id: nationalityId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ marital: { connect: { id: disabilityId } } })),
                     update: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), titleId && ({ title: { connect: { id: titleId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), countryId && ({ country: { connect: { id: countryId } } })), nationalityId && ({ nationality: { connect: { id: nationalityId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ marital: { connect: { id: disabilityId } } }))
                 });
                 if (resp) {
@@ -1418,17 +1441,18 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = req.body;
-                const resp = yield ams.stepEducation.upsert(data === null || data === void 0 ? void 0 : data.map((row) => {
+                yield ams.stepEducation.deleteMany({ where: { serial: req.body[0].serial } });
+                const resp = yield Promise.all(data === null || data === void 0 ? void 0 : data.map((row) => __awaiter(this, void 0, void 0, function* () {
                     const { id, instituteCategoryId, certCategoryId } = row;
                     row === null || row === void 0 ? true : delete row.instituteCategoryId;
                     row === null || row === void 0 ? true : delete row.id;
                     row === null || row === void 0 ? true : delete row.certCategoryId;
-                    return ({
-                        where: { id: (id || null) },
+                    return yield ams.stepEducation.upsert({
+                        where: { id: (id || '') },
                         create: Object.assign(Object.assign(Object.assign({}, row), instituteCategoryId && ({ instituteCategory: { connect: { id: instituteCategoryId } } })), certCategoryId && ({ certCategory: { connect: { id: certCategoryId } } })),
-                        update: Object.assign(Object.assign(Object.assign({}, row), instituteCategoryId && ({ title: { connect: { id: instituteCategoryId } } })), certCategoryId && ({ relation: { connect: { id: certCategoryId } } }))
+                        update: Object.assign(Object.assign(Object.assign({}, row), instituteCategoryId && ({ instituteCategory: { connect: { id: instituteCategoryId } } })), certCategoryId && ({ certCategory: { connect: { id: certCategoryId } } }))
                     });
-                }));
+                })));
                 if (resp) {
                     res.status(200).json(resp);
                 }
@@ -1467,8 +1491,11 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = req.body;
+                console.log(data);
+                yield ams.stepResult.deleteMany({ where: { serial: req.body[0].serial } });
+                yield ams.stepGrade.deleteMany({ where: { serial: req.body[0].serial } });
                 // Results 
-                const resp = yield ams.stepEducation.upsert(data === null || data === void 0 ? void 0 : data.map((row) => {
+                const resp = yield Promise.all(data === null || data === void 0 ? void 0 : data.map((row) => __awaiter(this, void 0, void 0, function* () {
                     const { id, certCategoryId } = row;
                     row === null || row === void 0 ? true : delete row.id;
                     row === null || row === void 0 ? true : delete row.certCategoryId;
@@ -1480,12 +1507,12 @@ class AmsController {
                         item === null || item === void 0 ? true : delete item.subjectId;
                         return (Object.assign(Object.assign(Object.assign(Object.assign({}, item), resultId && ({ result: { connect: { id: resultId } } })), gradeWeightId && ({ gradeWeight: { connect: { id: gradeWeightId } } })), subjectId && ({ subject: { connect: { id: subjectId } } })));
                     });
-                    return ({
-                        where: { id: (id || null) },
+                    return yield ams.stepResult.upsert({
+                        where: { id: (id || '') },
                         create: Object.assign(Object.assign(Object.assign({}, row), certCategoryId && ({ certCategory: { connect: { id: certCategoryId } } })), { grades: { create: newGrades } }),
-                        update: Object.assign(Object.assign(Object.assign({}, row), certCategoryId && ({ certCategory: { connect: { id: certCategoryId } } })), { grades: { upsert: newGrades } })
+                        update: Object.assign(Object.assign(Object.assign({}, row), certCategoryId && ({ certCategory: { connect: { id: certCategoryId } } })), { grades: { create: newGrades } })
                     });
-                }));
+                })));
                 if (resp) {
                     res.status(200).json(resp);
                 }
@@ -1568,16 +1595,17 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = req.body;
-                const resp = yield ams.stepDocument.upsert(data === null || data === void 0 ? void 0 : data.map((row) => {
+                yield ams.stepDocument.deleteMany({ where: { serial: req.body[0].serial } });
+                const resp = yield Promise.all(data === null || data === void 0 ? void 0 : data.map((row) => __awaiter(this, void 0, void 0, function* () {
                     const { id, documentCategoryId } = row;
                     row === null || row === void 0 ? true : delete row.documentCategoryId;
                     row === null || row === void 0 ? true : delete row.id;
-                    return ({
-                        where: { id: (id || null) },
+                    return yield ams.stepDocument.upsert({
+                        where: { id: (id || '') },
                         create: Object.assign(Object.assign({}, row), documentCategoryId && ({ documentCategory: { connect: { id: documentCategoryId } } })),
                         update: Object.assign(Object.assign({}, row), documentCategoryId && ({ documentCategory: { connect: { id: documentCategoryId } } }))
                     });
-                }));
+                })));
                 if (resp) {
                     res.status(200).json(resp);
                 }
@@ -1615,17 +1643,18 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = req.body;
-                const resp = yield ams.stepChoice.upsert(data === null || data === void 0 ? void 0 : data.map((row) => {
+                yield ams.stepChoice.deleteMany({ where: { serial: req.body[0].serial } });
+                const resp = yield Promise.all(data === null || data === void 0 ? void 0 : data.map((row) => __awaiter(this, void 0, void 0, function* () {
                     const { id, programId, majorId } = row;
                     row === null || row === void 0 ? true : delete row.programId;
                     row === null || row === void 0 ? true : delete row.programId;
                     row === null || row === void 0 ? true : delete row.id;
-                    return ({
-                        where: { id: (id || null) },
+                    return yield ams.stepChoice.upsert({
+                        where: { id: (id || '') },
                         create: Object.assign(Object.assign(Object.assign({}, row), programId && ({ program: { connect: { id: programId } } })), majorId && ({ major: { connect: { id: majorId } } })),
                         update: Object.assign(Object.assign(Object.assign({}, row), programId && ({ program: { connect: { id: programId } } })), majorId && ({ major: { connect: { id: majorId } } }))
                     });
-                }));
+                })));
                 console.log(resp);
                 if (resp) {
                     res.status(200).json(resp);
@@ -1674,6 +1703,31 @@ class AmsController {
                         update: Object.assign(Object.assign({}, row), titleId && ({ title: { connect: { id: titleId } } }))
                     });
                 }));
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Step Review */
+    saveStepReview(req, res) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { serial, choiceId } = req.body;
+                (_a = req.body) === null || _a === void 0 ? true : delete _a.choiceId;
+                console.log(req.body);
+                const resp = yield ams.applicant.update({
+                    where: { serial },
+                    data: Object.assign(Object.assign({}, req.body), choiceId && ({ choice: { connect: { id: choiceId } } })),
+                });
                 if (resp) {
                     res.status(200).json(resp);
                 }

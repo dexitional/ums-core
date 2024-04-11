@@ -14,7 +14,8 @@ const getGrade = (num, grades) => {
     if (num == null)
         return 'I';
     num = parseFloat(num);
-    const vs = grades && grades.find((row) => row.min <= num && num <= row.max);
+    const vs = grades && grades.find((row) => parseFloat(row.min) <= parseFloat(num) && parseFloat(num) <= parseFloat(row.max));
+    console.log(num, vs);
     return (vs && vs.grade) || 'I';
 };
 exports.getGrade = getGrade;
@@ -22,7 +23,7 @@ const getGradePoint = (num, grades) => {
     if (num == null)
         return 'I';
     num = parseFloat(num);
-    const vs = grades && grades.find((row) => row.min <= num && num <= row.max);
+    const vs = grades && grades.find((row) => parseFloat(row.min) <= parseFloat(num) && parseFloat(num) <= parseFloat(row.max));
     return (vs && vs.gradepoint) || 'I';
 };
 exports.getGradePoint = getGradePoint;
