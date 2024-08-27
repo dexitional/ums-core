@@ -303,8 +303,7 @@ export default class AisController {
                }, 
                orderBy: { session: { createdAt: 'asc'}}
             });
-            console.log("ASSESSMENT: ",resp)
-            console.log("STUDENTS: ", st)
+            
             
             if(resp){ 
                // Class Awards
