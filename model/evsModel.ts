@@ -80,4 +80,10 @@ export default class EvsModel {
         res = await db.query(sql);
         return res && res[0];
     }
+
+
+
+    /* ELECTA MODELS */
+
+    
 }

@@ -6,7 +6,7 @@ const {
   objectEnumValues,
   makeStrictEnum,
   Public,
-  detectRuntime,
+  getRuntime,
 } = require('./runtime/index-browser.js')
 
 
@@ -16,36 +16,42 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 5.9.1
- * Query Engine version: 23fdc5965b1e05fc54e5f26ed3de66776b93de64
+ * Prisma Client JS version: 5.13.0
+ * Query Engine version: b9a39a7ee606c28e3455d0fd60e78c3ba82b1a2b
  */
 Prisma.prismaVersion = {
-  client: "5.9.1",
-  engine: "23fdc5965b1e05fc54e5f26ed3de66776b93de64"
+  client: "5.13.0",
+  engine: "b9a39a7ee606c28e3455d0fd60e78c3ba82b1a2b"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
-  throw new Error(`PrismaClientKnownRequestError is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`PrismaClientKnownRequestError is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )};
 Prisma.PrismaClientUnknownRequestError = () => {
-  throw new Error(`PrismaClientUnknownRequestError is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`PrismaClientUnknownRequestError is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.PrismaClientRustPanicError = () => {
-  throw new Error(`PrismaClientRustPanicError is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`PrismaClientRustPanicError is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.PrismaClientInitializationError = () => {
-  throw new Error(`PrismaClientInitializationError is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`PrismaClientInitializationError is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.PrismaClientValidationError = () => {
-  throw new Error(`PrismaClientValidationError is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`PrismaClientValidationError is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.NotFoundError = () => {
-  throw new Error(`NotFoundError is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`NotFoundError is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.Decimal = Decimal
@@ -54,19 +60,23 @@ Prisma.Decimal = Decimal
  * Re-export of sql-template-tag
  */
 Prisma.sql = () => {
-  throw new Error(`sqltag is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`sqltag is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.empty = () => {
-  throw new Error(`empty is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`empty is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.join = () => {
-  throw new Error(`join is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`join is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.raw = () => {
-  throw new Error(`raw is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`raw is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.validator = Public.validator
@@ -75,11 +85,13 @@ Prisma.validator = Public.validator
 * Extensions
 */
 Prisma.getExtensionContext = () => {
-  throw new Error(`Extensions.getExtensionContext is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`Extensions.getExtensionContext is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 Prisma.defineExtension = () => {
-  throw new Error(`Extensions.defineExtension is unable to be run ${runtimeDescription}.
+  const runtimeName = getRuntime().prettyName;
+  throw new Error(`Extensions.defineExtension is unable to run in this browser environment, or has been bundled for the browser (running in ${runtimeName}).
 In case this error is unexpected for you, please report it in https://pris.ly/prisma-prisma-bug-report`,
 )}
 
@@ -106,6 +118,15 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
+
+exports.Prisma.LogScalarFieldEnum = {
+  id: 'id',
+  action: 'action',
+  user: 'user',
+  student: 'student',
+  meta: 'meta',
+  createdAt: 'createdAt'
+};
 
 exports.Prisma.CountryScalarFieldEnum = {
   id: 'id',
@@ -218,6 +239,7 @@ exports.Prisma.CourseScalarFieldEnum = {
 
 exports.Prisma.MajorScalarFieldEnum = {
   id: 'id',
+  programId: 'programId',
   shortName: 'shortName',
   longName: 'longName',
   status: 'status',
@@ -313,6 +335,7 @@ exports.Prisma.SessionScalarFieldEnum = {
   admissionPrefix: 'admissionPrefix',
   assignLateSheet: 'assignLateSheet',
   progressStudent: 'progressStudent',
+  stageSheet: 'stageSheet',
   default: 'default',
   status: 'status',
   createdAt: 'createdAt',
@@ -396,6 +419,21 @@ exports.Prisma.ActivityDeferScalarFieldEnum = {
   statusBy: 'statusBy',
   start: 'start',
   end: 'end',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ActivityBacklogScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  schemeId: 'schemeId',
+  title: 'title',
+  type: 'type',
+  meta: 'meta',
+  status: 'status',
+  approvedBy: 'approvedBy',
+  createdBy: 'createdBy',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -456,7 +494,7 @@ exports.Prisma.SheetScalarFieldEnum = {
   assessorId: 'assessorId',
   certifierId: 'certifierId',
   semesterNum: 'semesterNum',
-  sessionMode: 'sessionMode',
+  studyMode: 'studyMode',
   studentCount: 'studentCount',
   completeRatio: 'completeRatio',
   assessed: 'assessed',
@@ -548,7 +586,8 @@ exports.Prisma.BillScalarFieldEnum = {
   sessionId: 'sessionId',
   bankaccId: 'bankaccId',
   programId: 'programId',
-  studentIds: 'studentIds',
+  includeStudentIds: 'includeStudentIds',
+  excludeStudentIds: 'excludeStudentIds',
   mainGroupCode: 'mainGroupCode',
   discountGroupCode: 'discountGroupCode',
   narrative: 'narrative',
@@ -559,6 +598,18 @@ exports.Prisma.BillScalarFieldEnum = {
   discount: 'discount',
   quota: 'quota',
   posted: 'posted',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ActivityBillScalarFieldEnum = {
+  id: 'id',
+  billId: 'billId',
+  userId: 'userId',
+  amount: 'amount',
+  discount: 'discount',
+  receivers: 'receivers',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -592,6 +643,9 @@ exports.Prisma.TranstypeScalarFieldEnum = {
   id: 'id',
   title: 'title',
   visibility: 'visibility',
+  amountInGhc: 'amountInGhc',
+  amountInUsd: 'amountInUsd',
+  remark: 'remark',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -609,16 +663,6 @@ exports.Prisma.TransactionScalarFieldEnum = {
   feeType: 'feeType',
   currency: 'currency',
   amount: 'amount',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.ServicefeeScalarFieldEnum = {
-  transtypeId: 'transtypeId',
-  title: 'title',
-  amountInGhc: 'amountInGhc',
-  amountInUsd: 'amountInUsd',
-  status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -723,6 +767,14 @@ exports.Prisma.GradeWeightScalarFieldEnum = {
   certCategoryId: 'certCategoryId',
   title: 'title',
   weight: 'weight',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AwardClassScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -874,6 +926,7 @@ exports.Prisma.FresherScalarFieldEnum = {
 
 exports.Prisma.ApplicantScalarFieldEnum = {
   serial: 'serial',
+  admissionId: 'admissionId',
   stageId: 'stageId',
   applyTypeId: 'applyTypeId',
   choiceId: 'choiceId',
@@ -1023,6 +1076,82 @@ exports.Prisma.StepRefereeScalarFieldEnum = {
   occupation: 'occupation',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ElectionScalarFieldEnum = {
+  id: 'id',
+  groupId: 'groupId',
+  type: 'type',
+  title: 'title',
+  tag: 'tag',
+  logo: 'logo',
+  admins: 'admins',
+  voterCount: 'voterCount',
+  voterList: 'voterList',
+  voterData: 'voterData',
+  allowMonitor: 'allowMonitor',
+  allowEcMonitor: 'allowEcMonitor',
+  allowVip: 'allowVip',
+  allowEcVip: 'allowEcVip',
+  allowResult: 'allowResult',
+  allowEcResult: 'allowEcResult',
+  allowMask: 'allowMask',
+  autoStop: 'autoStop',
+  startAt: 'startAt',
+  endAt: 'endAt',
+  action: 'action',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ElectorScalarFieldEnum = {
+  id: 'id',
+  electionId: 'electionId',
+  tag: 'tag',
+  name: 'name',
+  descriptor: 'descriptor',
+  gender: 'gender',
+  voteTime: 'voteTime',
+  voteSum: 'voteSum',
+  voteHash: 'voteHash',
+  voteIp: 'voteIp',
+  voteStatus: 'voteStatus',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PortfolioScalarFieldEnum = {
+  id: 'id',
+  electionId: 'electionId',
+  title: 'title',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CandidateScalarFieldEnum = {
+  id: 'id',
+  portfolioId: 'portfolioId',
+  tag: 'tag',
+  name: 'name',
+  teaser: 'teaser',
+  orderNo: 'orderNo',
+  photo: 'photo',
+  votes: 'votes',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AttackScalarFieldEnum = {
+  id: 'id',
+  electionId: 'electionId',
+  tag: 'tag',
+  location: 'location',
+  ip: 'ip',
+  meta: 'meta',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.AppScalarFieldEnum = {
@@ -1257,15 +1386,15 @@ exports.Prisma.NullableJsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
-exports.Prisma.NullsOrder = {
-  first: 'first',
-  last: 'last'
-};
-
 exports.Prisma.JsonNullValueFilter = {
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 exports.unitType = exports.$Enums.unitType = {
   ACADEMIC: 'ACADEMIC',
@@ -1297,7 +1426,9 @@ exports.residentialStatus = exports.$Enums.residentialStatus = {
 exports.studyMode = exports.$Enums.studyMode = {
   M: 'M',
   W: 'W',
-  E: 'E'
+  E: 'E',
+  A: 'A',
+  f: 'f'
 };
 
 exports.completeType = exports.$Enums.completeType = {
@@ -1322,7 +1453,14 @@ exports.courseType = exports.$Enums.courseType = {
 exports.deferStatus = exports.$Enums.deferStatus = {
   PENDED: 'PENDED',
   APPROVED: 'APPROVED',
-  DECLINED: 'DECLINED'
+  DECLINED: 'DECLINED',
+  RESUMED: 'RESUMED'
+};
+
+exports.backlogType = exports.$Enums.backlogType = {
+  REGISTRATION: 'REGISTRATION',
+  ASSESSMENT: 'ASSESSMENT',
+  DELETION: 'DELETION'
 };
 
 exports.scoreType = exports.$Enums.scoreType = {
@@ -1417,6 +1555,12 @@ exports.sessionMode = exports.$Enums.sessionMode = {
   E: 'E'
 };
 
+exports.EvsActionType = exports.$Enums.EvsActionType = {
+  STAGED: 'STAGED',
+  STARTED: 'STARTED',
+  ENDED: 'ENDED'
+};
+
 exports.AccountType = exports.$Enums.AccountType = {
   LINKEDIN: 'LINKEDIN',
   GOOGLE: 'GOOGLE',
@@ -1453,6 +1597,7 @@ exports.scaleLevel = exports.$Enums.scaleLevel = {
 };
 
 exports.Prisma.ModelName = {
+  log: 'log',
   country: 'country',
   region: 'region',
   title: 'title',
@@ -1474,6 +1619,7 @@ exports.Prisma.ModelName = {
   activityProgress: 'activityProgress',
   activityProgchange: 'activityProgchange',
   activityDefer: 'activityDefer',
+  activityBacklog: 'activityBacklog',
   assessment: 'assessment',
   informer: 'informer',
   letter: 'letter',
@@ -1484,11 +1630,11 @@ exports.Prisma.ModelName = {
   resit: 'resit',
   bankacc: 'bankacc',
   bill: 'bill',
+  activityBill: 'activityBill',
   charge: 'charge',
   collector: 'collector',
   transtype: 'transtype',
   transaction: 'transaction',
-  servicefee: 'servicefee',
   studentAccount: 'studentAccount',
   activityFinanceApi: 'activityFinanceApi',
   activityFinanceVoucher: 'activityFinanceVoucher',
@@ -1499,6 +1645,7 @@ exports.Prisma.ModelName = {
   certCategory: 'certCategory',
   instituteCategory: 'instituteCategory',
   gradeWeight: 'gradeWeight',
+  awardClass: 'awardClass',
   documentCategory: 'documentCategory',
   subject: 'subject',
   amsPrice: 'amsPrice',
@@ -1520,6 +1667,11 @@ exports.Prisma.ModelName = {
   stepDocument: 'stepDocument',
   stepChoice: 'stepChoice',
   stepReferee: 'stepReferee',
+  election: 'election',
+  elector: 'elector',
+  portfolio: 'portfolio',
+  candidate: 'candidate',
+  attack: 'attack',
   app: 'app',
   appRole: 'appRole',
   group: 'group',
@@ -1544,19 +1696,15 @@ class PrismaClient {
   constructor() {
     return new Proxy(this, {
       get(target, prop) {
-        const runtime = detectRuntime()
-        const edgeRuntimeName = {
-          'workerd': 'Cloudflare Workers',
-          'deno': 'Deno and Deno Deploy',
-          'netlify': 'Netlify Edge Functions',
-          'edge-light': 'Vercel Edge Functions or Edge Middleware',
-        }[runtime]
-
-        let message = 'PrismaClient is unable to run in '
-        if (edgeRuntimeName !== undefined) {
-          message += edgeRuntimeName + '. As an alternative, try Accelerate: https://pris.ly/d/accelerate.'
+        let message
+        const runtime = getRuntime()
+        if (runtime.isEdge) {
+          message = `PrismaClient is not configured to run in ${runtime.prettyName}. In order to run Prisma Client on edge runtime, either:
+- Use Prisma Accelerate: https://pris.ly/d/accelerate
+- Use Driver Adapters: https://pris.ly/d/driver-adapters
+`;
         } else {
-          message += 'this browser environment, or has been bundled for the browser (running in `' + runtime + '`).'
+          message = 'PrismaClient is unable to run in this browser environment, or has been bundled for the browser (running in `' + runtime.prettyName + '`).'
         }
         
         message += `

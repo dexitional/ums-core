@@ -1,3 +1,5 @@
+import { NextFunction, Request, Response } from 'express'
+
 export const getGrade = (num: any,grades: any) => {
     if(num == null) return 'I'
     num = parseFloat(num)
@@ -7,10 +9,10 @@ export const getGrade = (num: any,grades: any) => {
 }
 
 export const getGradePoint = (num: any,grades: any) => {
-    if(num == null) return 'I'
+    if(num == null) return 0
     num = parseFloat(num)
     const vs = grades && grades.find((row: any) => parseFloat(row.min) <= parseFloat(num) && parseFloat(num) <= parseFloat(row.max))
-    return (vs && vs.gradepoint) || 'I';
+    return (vs && vs.gradepoint) || 0;
 }
 
 export const getBillCodePrisma = (semesterNum: number,) => {
@@ -18,6 +20,30 @@ export const getBillCodePrisma = (semesterNum: number,) => {
    if([3,4].includes(semesterNum)) return [{ mainGroupCode: { contains: '0100' }},{ mainGroupCode: { contains: '0101' }},{ mainGroupCode: { contains: '0110' }},{ mainGroupCode: { contains: '0111' }},{ mainGroupCode: { contains: '1111' }},{ mainGroupCode: { contains: '1110' }},{ mainGroupCode: { contains: '1100' }}]
    if([5,6].includes(semesterNum)) return [{ mainGroupCode: { contains: '0010' }},{ mainGroupCode: { contains: '0011' }},{ mainGroupCode: { contains: '1010' }},{ mainGroupCode: { contains: '1011' }},{ mainGroupCode: { contains: '1111' }},{ mainGroupCode: { contains: '0110' }},{ mainGroupCode: { contains: '0111' }}]
 }
+
+export const getSemesterFromCode = (semester: any, code: string,) => {
+  const levels:any = code.split("");
+  console.log(levels, semester)
+  const lvs = [];
+  if(levels.length){
+     for(let i = 0; i < levels.length; i++){
+        if(semester == 'SEM1'){
+            if(levels[i] == 1 && i == 0) lvs.push(1)   
+            if(levels[i] == 1  && i == 1) lvs.push(3)   
+            if(levels[i] == 1  && i == 2) lvs.push(5)   
+            if(levels[i] == 1  && i == 3) lvs.push(7)   
+        } else {
+            if(levels[i] == 1  && i == 0) lvs.push(2)   
+            if(levels[i] == 1  && i == 1) lvs.push(4)   
+            if(levels[i] == 1  && i == 2) lvs.push(6)   
+            if(levels[i] == 1  && i == 3) lvs.push(8)
+        }
+     }
+  }
+  return lvs?.join(',');
+
+}
+
 
 export const decodeBase64Image = (dataString: any) => {
     var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
@@ -38,4 +64,18 @@ export const rotateImage = async (imageFile:any) => {
     image.rotate(90, Jimp.RESIZE_BEZIER, function(err:any){
        if (err) throw err;
     }).write(imageFile);
+}
+
+export const apiLogger = (action: any) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        const api = req.query.api
+        const refno = req.params.refno
+        const dm = req.body
+        let dt:any = {}
+        if(refno) dt.studentId = refno
+        if(api) dt.apiToken = api
+        if(dm && Object.keys(dm).length > 0) dt.data = dm
+        //const log = await SSO.apilogger(parseIp(req),action,dt)
+        return next();
+    }  
 }

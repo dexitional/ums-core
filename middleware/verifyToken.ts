@@ -8,7 +8,6 @@ const verifyToken = (req: Request | any, res: Response, next: NextFunction) => {
     
     jwt.verify(token, "miguelblayackah", (err: any, decoded: any) => {
         if (err) return res.status(401).send({ success: false, msg: "Unauthorized!",});
-        console.log("decoded token: ", decoded)
         req.userId = decoded?.user?.tag;
         next();
     });

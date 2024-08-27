@@ -1,8 +1,7 @@
-import {Express, Request, Response, NextFunction} from 'express';
+import { Express, Request, Response, NextFunction} from 'express';
 
 const jwt = require("jsonwebtoken");
-const db = require("../models");
-const User = db.user;
+
 
 const isEvsAdmin = (req: Request | any, res: Response, next: NextFunction) => {
   // Loop and Check if role exist -- next(); return; [ Pass parameter req.userId ]

@@ -66,6 +66,7 @@ class AmsRoute {
       this.router.get('/institutes/list', this.controller.fetchInstituteList);
       this.router.get('/certificates/list', this.controller.fetchCertList);
       this.router.get('/gradeweights/list', this.controller.fetchWeightList);
+      this.router.get('/awardclasses/list', this.controller.fetchAwardList);
       this.router.get('/stages/list', this.controller.fetchStageList);
       this.router.get('/applytypes/list', this.controller.fetchApplytypeList);
       this.router.get('/prices/list', this.controller.fetchAmsPriceList);

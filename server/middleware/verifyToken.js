@@ -9,7 +9,6 @@ const verifyToken = (req, res, next) => {
         var _a;
         if (err)
             return res.status(401).send({ success: false, msg: "Unauthorized!", });
-        console.log("decoded token: ", decoded);
         req.userId = (_a = decoded === null || decoded === void 0 ? void 0 : decoded.user) === null || _a === void 0 ? void 0 : _a.tag;
         next();
     });

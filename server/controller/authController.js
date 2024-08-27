@@ -20,9 +20,11 @@ const sso = new ums_1.PrismaClient();
 const jwt = require('jsonwebtoken');
 const { customAlphabet } = require("nanoid");
 const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 8);
+const pin = customAlphabet("1234567890", 4);
 const sha1 = require('sha1');
 const path = require('path');
 const fs = require("fs");
+const sms = require("../config/sms");
 const Auth = new authModel_1.default();
 class AuthController {
     authenticateWithCredential(req, res) {
@@ -36,11 +38,11 @@ class AuthController {
                     throw new Error('No password provided!');
                 // Locate Single-Sign-On Record or Student account
                 //const isUser = await Auth.withCredential(username, password);
-                const isUser = yield sso.user.findFirst({ where: { username, password: sha1(password) }, include: { group: { select: { title: true } } } });
+                const isUser = yield sso.user.findFirst({ where: { username, OR: [{ password: sha1(password) }, { unlockPin: password }] }, include: { group: { select: { title: true } } } });
                 const isApplicant = yield sso.voucher.findFirst({ where: { serial: username, pin: password }, include: { admission: true } });
                 if (isUser) {
                     let { id, tag, groupId, group: { title: groupName } } = isUser;
-                    let user;
+                    let user = {};
                     if (groupId == 4) { // Support
                         const data = yield sso.support.findUnique({ where: { supportNo: Number(tag) } });
                         if (data)
@@ -56,20 +58,42 @@ class AuthController {
                         if (data)
                             user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: (_c = data === null || data === void 0 ? void 0 : data.program) === null || _c === void 0 ? void 0 : _c.longName, department: "", group_id: groupId, group_name: groupName };
                     }
-                    const photo = `https://cdn.ucc.edu.gh/photos/?tag=${encodeURIComponent(tag)}`;
+                    // SSO Photo
+                    const photo = `${process.env.UMS_DOMAIN}/auth/photos/?tag=${encodeURIComponent(tag)}`;
+                    // Roles & Privileges
                     const roles = yield sso.userRole.findMany({ where: { userId: id }, include: { appRole: { select: { title: true, app: true } } } });
-                    //let roles:any = []; // All App Roles
-                    // let evsRoles = await Auth.fetchEvsRoles(tag); // Only Electa Roles
+                    const evsRoles = yield sso.election.findMany({
+                        where: {
+                            status: true,
+                            OR: [
+                                { voterData: { path: '$[*].tag', array_contains: tag } },
+                                { admins: { path: '$[*]', array_contains: tag } },
+                            ]
+                        },
+                        select: { id: true, title: true, admins: true }
+                    });
+                    //console.log(user,roles,evsRoles)
                     // Construct UserData
-                    const userdata = {
-                        user,
-                        roles: [...roles],
-                        photo
-                    };
+                    //let userdata;
+                    let userdata = { user, roles: [], photo };
+                    if (roles === null || roles === void 0 ? void 0 : roles.length)
+                        userdata.roles = [...userdata.roles, ...roles];
+                    if (evsRoles === null || evsRoles === void 0 ? void 0 : evsRoles.length)
+                        userdata.roles = [
+                            ...userdata.roles,
+                            ...(evsRoles === null || evsRoles === void 0 ? void 0 : evsRoles.map((r) => ({
+                                id: r.id,
+                                isAdmin: !!(r.admins.find((m) => m.toLowerCase() == tag.toLowerCase())),
+                                appRole: {
+                                    app: { tag: 'evs', title: r.title }
+                                }
+                            })))
+                        ];
+                    console.log(userdata);
                     // Generate Session Token & 
-                    const token = jwt.sign(userdata || {}, process.env.SECRET, { expiresIn: 60 * 60 });
+                    const token = jwt.sign(userdata || {}, process.env.SECRET);
                     // Send Response to Client
-                    res.status(200).json({ success: true, data: userdata, token });
+                    return res.status(200).json({ success: true, data: userdata, token });
                 }
                 else if (isApplicant) {
                     const data = yield sso.stepProfile.findFirst({ where: { serial: username }, include: { applicant: { select: { photo: true } } } });
@@ -88,23 +112,17 @@ class AuthController {
                         photo
                     };
                     // Generate Session Token & 
-                    const token = jwt.sign(userdata || {}, process.env.SECRET, { expiresIn: 60 * 60 });
+                    const token = jwt.sign(userdata || {}, process.env.SECRET);
                     // Send Response to Client
-                    res.status(200).json({ success: true, data: userdata, token });
+                    return res.status(200).json({ success: true, data: userdata, token });
                 }
                 else {
-                    res.status(401).json({
-                        success: false,
-                        message: "Invalid Credentials!",
-                    });
+                    return res.status(401).json({ success: false, message: "Invalid Credentials!" });
                 }
             }
             catch (error) {
                 console.log(error);
-                res.status(401).json({
-                    success: false,
-                    message: error.message,
-                });
+                return res.status(401).json({ success: false, message: error.message });
             }
         });
     }
@@ -132,7 +150,7 @@ class AuthController {
                             photo
                         };
                         // Generate Session Token & 
-                        const token = jwt.sign(userdata || {}, process.env.SECRET, { expiresIn: 60 * 60 });
+                        const token = jwt.sign(userdata || {}, process.env.SECRET);
                         // Send Response to Client
                         res.status(200).json({ success: true, data: userdata, token });
                     }
@@ -182,7 +200,101 @@ class AuthController {
         });
     }
     authenticateWithKey(req, res) {
-        return __awaiter(this, void 0, void 0, function* () { });
+        var _a, _b, _c, _d;
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { tag: username } = req.body;
+                if (!username)
+                    throw new Error('No username provided!');
+                // Locate Single-Sign-On Record or Student account
+                //const isUser = await Auth.withCredential(username, password);
+                const isUser = yield sso.user.findFirst({ where: { tag: username }, include: { group: { select: { title: true } } } });
+                const isApplicant = yield sso.voucher.findFirst({ where: { serial: username }, include: { admission: true } });
+                if (isUser) {
+                    let { id, tag, groupId, group: { title: groupName } } = isUser;
+                    let user = {};
+                    if (groupId == 4) { // Support
+                        const data = yield sso.support.findUnique({ where: { supportNo: Number(tag) } });
+                        if (data)
+                            user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: "IT Support", department: "System Support", group_id: groupId, group_name: groupName };
+                    }
+                    else if (groupId == 2) { // Staff
+                        const data = yield sso.staff.findUnique({ where: { staffNo: tag }, include: { promotion: { select: { job: true } }, job: true, unit: true }, });
+                        if (data)
+                            user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: (_a = data === null || data === void 0 ? void 0 : data.job) === null || _a === void 0 ? void 0 : _a.title, department: (_b = data === null || data === void 0 ? void 0 : data.unit) === null || _b === void 0 ? void 0 : _b.title, group_id: groupId, group_name: groupName };
+                    }
+                    else { // Student
+                        const data = yield sso.student.findUnique({ where: { id: tag }, include: { program: { select: { longName: true } } } });
+                        if (data)
+                            user = { tag, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data === null || data === void 0 ? void 0 : data.lname, mail: data === null || data === void 0 ? void 0 : data.email, descriptor: (_c = data === null || data === void 0 ? void 0 : data.program) === null || _c === void 0 ? void 0 : _c.longName, department: "", group_id: groupId, group_name: groupName };
+                    }
+                    // SSO Photo
+                    const photo = `${process.env.UMS_DOMAIN}/auth/photos/?tag=${encodeURIComponent(tag)}`;
+                    // Roles & Privileges
+                    const roles = yield sso.userRole.findMany({ where: { userId: id }, include: { appRole: { select: { title: true, app: true } } } });
+                    const evsRoles = yield sso.election.findMany({
+                        where: {
+                            status: true,
+                            OR: [
+                                { voterData: { path: '$[*].tag', array_contains: tag } },
+                                { admins: { path: '$[*]', array_contains: tag } },
+                            ]
+                        },
+                        select: { id: true, title: true, admins: true }
+                    });
+                    //console.log(user,roles,evsRoles)
+                    // Construct UserData
+                    //let userdata;
+                    let userdata = { user, roles: [], photo };
+                    if (roles === null || roles === void 0 ? void 0 : roles.length)
+                        userdata.roles = [...userdata.roles, ...roles];
+                    if (evsRoles === null || evsRoles === void 0 ? void 0 : evsRoles.length)
+                        userdata.roles = [
+                            ...userdata.roles,
+                            ...(evsRoles === null || evsRoles === void 0 ? void 0 : evsRoles.map((r) => ({
+                                id: r.id,
+                                isAdmin: !!(r.admins.find((m) => m.toLowerCase() == tag.toLowerCase())),
+                                appRole: {
+                                    app: { tag: 'evs', title: r.title }
+                                }
+                            })))
+                        ];
+                    console.log(userdata);
+                    // Generate Session Token & 
+                    const token = jwt.sign(userdata || {}, process.env.SECRET);
+                    // Send Response to Client
+                    return res.status(200).json({ success: true, data: userdata, token });
+                }
+                else if (isApplicant) {
+                    const data = yield sso.stepProfile.findFirst({ where: { serial: username }, include: { applicant: { select: { photo: true } } } });
+                    let user;
+                    if (data) {
+                        user = { tag: username, fname: data === null || data === void 0 ? void 0 : data.fname, mname: data === null || data === void 0 ? void 0 : data.mname, lname: data.lname, mail: data.email, descriptor: "Applicant", department: "None", group_id: 3, group_name: "Applicant" };
+                    }
+                    else {
+                        user = { tag: username, fname: "Admission", mname: "", lname: "Applicant", mail: "", descriptor: "Applicant", department: "None", group_id: 3, group_name: "Applicant" };
+                    }
+                    const photo = data ? (_d = data === null || data === void 0 ? void 0 : data.applicant) === null || _d === void 0 ? void 0 : _d.photo : `https://cdn.ucc.edu.gh/photos/?tag=${encodeURIComponent(username)}`;
+                    // Construct UserData
+                    const userdata = {
+                        user,
+                        roles: [],
+                        photo
+                    };
+                    // Generate Session Token & 
+                    const token = jwt.sign(userdata || {}, process.env.SECRET);
+                    // Send Response to Client
+                    return res.status(200).json({ success: true, data: userdata, token });
+                }
+                else {
+                    return res.status(401).json({ success: false, message: "Invalid Credentials!" });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(401).json({ success: false, message: error.message });
+            }
+        });
     }
     /* Account & Password */
     changePassword(req, res) {
@@ -191,10 +303,11 @@ class AuthController {
                 const { oldpassword, newpassword, tag } = req.body;
                 const isUser = yield sso.user.findFirst({
                     where: {
-                        username: tag,
-                        password: sha1(oldpassword)
+                        tag: tag,
+                        password: sha1(oldpassword),
                     }
                 });
+                console.log(isUser, req.body);
                 if (isUser) {
                     const ups = yield sso.user.updateMany({
                         where: { tag },
@@ -204,6 +317,138 @@ class AuthController {
                 }
                 else {
                     res.status(202).json({ message: `Wrong password provided!` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* SSO Management */
+    /* Send Student Pin */
+    sendStudentPin(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { tag } = req.params;
+                const user = yield sso.user.findFirst({ where: { groupId: 1, status: true, tag } });
+                if (user) {
+                    const st = yield sso.student.findUnique({ where: { id: tag } });
+                    const msg = `Please Access https://ums.aucc.edu.gh with USERNAME: ${user.username}, PIN: ${user.unlockPin}. Note that you can use 4-digit PIN as PASSWORD`;
+                    let resp;
+                    if (st && (st === null || st === void 0 ? void 0 : st.phone)) {
+                        resp = yield sms(st === null || st === void 0 ? void 0 : st.phone, msg);
+                    }
+                    else {
+                        resp = { code: 1002 };
+                    }
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(202).json({ message: `Invalid request!` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Send Voter Pins */
+    sendVoterPins(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { id } = req.params;
+                const en = yield sso.election.findFirst({ where: { id: Number(id), status: true } });
+                if (en) {
+                    const users = en === null || en === void 0 ? void 0 : en.voterData;
+                    if (users === null || users === void 0 ? void 0 : users.length) {
+                        const resp = yield Promise.all(users === null || users === void 0 ? void 0 : users.map((row) => __awaiter(this, void 0, void 0, function* () {
+                            const msg = `Please Access https://ums.aucc.edu.gh with USERNAME: ${row.username}, PIN: ${row.pin}. Note that you can use 4-digit PIN as PASSWORD`;
+                            if (row === null || row === void 0 ? void 0 : row.phone)
+                                return yield sms(row === null || row === void 0 ? void 0 : row.phone, msg);
+                            return { code: 1002 };
+                        })));
+                        return res.status(200).json(resp);
+                    }
+                    else {
+                        return res.status(202).json({ message: `Invalid request!` });
+                    }
+                }
+                return res.status(202).json({ message: `Invalid request!` });
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Send Student Pins */
+    sendStudentPins(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const users = yield sso.user.findMany({ where: { groupId: 1, status: true } });
+                if (users === null || users === void 0 ? void 0 : users.length) {
+                    const resp = yield Promise.all(users === null || users === void 0 ? void 0 : users.map((row) => __awaiter(this, void 0, void 0, function* () {
+                        const st = yield sso.student.findUnique({ where: { id: row === null || row === void 0 ? void 0 : row.tag } });
+                        const msg = `Please Access https://ums.aucc.edu.gh with USERNAME: ${row.username}, PIN: ${row.unlockPin}. Note that you can use 4-digit PIN as PASSWORD`;
+                        if (st && (st === null || st === void 0 ? void 0 : st.phone))
+                            return yield sms(st.phone, msg);
+                        return { code: 1002 };
+                    })));
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(202).json({ message: `Invalid request!` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Reset Student Pins  */
+    resetStudentPins(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const users = yield sso.user.findMany({
+                    where: { groupId: 1, status: true }
+                });
+                if (users === null || users === void 0 ? void 0 : users.length) {
+                    const resp = yield Promise.all(users === null || users === void 0 ? void 0 : users.map((row) => __awaiter(this, void 0, void 0, function* () {
+                        return yield sso.user.update({
+                            where: { id: row === null || row === void 0 ? void 0 : row.id },
+                            data: { unlockPin: pin() }
+                        });
+                    })));
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(202).json({ message: `Invalid request!` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
+    /* Reset Student Pins  */
+    resetStudentPin(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { tag } = req.params;
+                const user = yield sso.user.findFirst({ where: { groupId: 1, status: true, tag } });
+                if (user) {
+                    const resp = yield sso.user.updateMany({
+                        where: { tag },
+                        data: { unlockPin: pin() }
+                    });
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(202).json({ message: `Invalid request!` });
                 }
             }
             catch (error) {
@@ -246,41 +491,79 @@ class AuthController {
     //       res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
     //   }
     // }
+    fetchEvsPhoto(req, res) {
+        var _a, _b, _c, _d;
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.setHeader("Access-Control-Allow-Origin", "*");
+                res.setHeader("Cross-Origin-Opener-Policy", "cross-origin");
+                res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+                res.header("Access-Control-Allow-Headers", "x-access-token, Origin, Content-Type, Accept");
+                let eid = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.eid;
+                let mtag = (_b = req === null || req === void 0 ? void 0 : req.query) === null || _b === void 0 ? void 0 : _b.tag;
+                mtag = (_c = mtag === null || mtag === void 0 ? void 0 : mtag.trim()) === null || _c === void 0 ? void 0 : _c.toLowerCase();
+                const tag = (_d = mtag === null || mtag === void 0 ? void 0 : mtag.replaceAll("/", "")) === null || _d === void 0 ? void 0 : _d.replaceAll("_", "");
+                if (!mtag && fs.existsSync(path.join(__dirname, `/../../public/cdn/photo/evs`, `${eid}.png`)))
+                    return res.status(200).sendFile(path.join(__dirname, `/../../public/cdn/photo/evs`, `${eid}.png`));
+                else if (fs.existsSync(path.join(__dirname, `/../../public/cdn/photo/evs/${eid}`, `${tag}.jpg`)))
+                    return res.status(200).sendFile(path.join(__dirname, `/../../public/cdn/photo/evs/${eid}`, `${tag}.jpg`));
+                else
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/") + `/none.png`);
+            }
+            catch (err) {
+                console.log(err);
+                return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
+            }
+        });
+    }
     fetchPhoto(req, res) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 res.setHeader("Access-Control-Allow-Origin", "*");
+                res.setHeader("Cross-Origin-Opener-Policy", "cross-origin");
+                res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+                res.header("Access-Control-Allow-Headers", "x-access-token, Origin, Content-Type, Accept");
                 let mtag = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.tag;
                 mtag = mtag.trim().toLowerCase();
                 const tag = mtag.replaceAll("/", "").replaceAll("_", "");
-                if (fs.statSync(path.join(__dirname, "/../../public/cdn/photo/staff/", `${tag}.jpg`)))
-                    res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/staff/", `${tag}.jpg`));
-                else if (fs.statSync(path.join(__dirname, "/../../public/cdn/photo/student/", `${tag}.jpg`)))
-                    res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/student/", `${tag}.jpg`));
-                else if (fs.statSync(path.join(__dirname, "/../../public/cdn/photo/support/", `${tag}.jpg`)))
-                    res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/support/", `${tag}.jpg`));
-                else if (fs.statSync(path.join(__dirname, "/../../public/cdn/photo/applicant/", `${tag}.jpg`)))
-                    res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/applicant/", `${tag}.jpg`));
+                if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/staff/", `${tag}.jpg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/staff/", `${tag}.jpg`));
+                else if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/staff/", `${tag}.jpeg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/staff/", `${tag}.jpg`));
+                else if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/student/", `${tag}.jpg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/student/", `${tag}.jpg`));
+                else if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/student/", `${tag}.jpeg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/student/", `${tag}.jpg`));
+                else if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/support/", `${tag}.jpg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/support/", `${tag}.jpg`));
+                else if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/support/", `${tag}.jpeg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/support/", `${tag}.jpg`));
+                else if (fs.existsSync(path.join(__dirname, "/../../public/cdn/photo/applicant/", `${tag}.jpg`)))
+                    return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/photo/applicant/", `${tag}.jpg`));
                 else
                     res.status(200).sendFile(path.join(__dirname, "/../../public/cdn/") + `/none.png`);
             }
             catch (err) {
                 console.log(err);
-                res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
+                return res.status(200).sendFile(path.join(__dirname, "/../../public/cdn", "none.png"));
             }
         });
     }
     postPhoto(req, res) {
+        var _a, _b, _c, _d, _e;
         return __awaiter(this, void 0, void 0, function* () {
+            console.log("Body: ", req.body);
+            console.log("FILES: ", req.files);
             if (!req.files || Object.keys(req.files).length === 0) {
                 return res.status(400).send('No files were uploaded.');
             }
-            const photo = req.files.photo;
+            const photo = (_a = req === null || req === void 0 ? void 0 : req.files) === null || _a === void 0 ? void 0 : _a.photo;
             const { tag } = req.body;
             const isUser = yield sso.user.findFirst({ where: { tag } });
             if (!isUser) {
-                const stphoto = `${req.protocol}://${req.get("host")}/api/auth/photos/?tag=${tag.toString().toLowerCase()}&cache=${Math.random() * 1000}`;
+                const stphoto = `${req.protocol}://${req.get("host")}/api/auth/photos/?tag=${(_b = tag === null || tag === void 0 ? void 0 : tag.toString()) === null || _b === void 0 ? void 0 : _b.toLowerCase()}&cache=${Math.random() * 1000}`;
                 return res.status(200).json({ success: true, data: stphoto });
             }
             let { groupId } = isUser;
@@ -302,7 +585,7 @@ class AuthController {
                     mpath = "student";
                     break;
             }
-            const dest = path.join(__dirname, "/../../public/cdn/photo/" + mpath, (tag && tag.toString().replaceAll("/", "").trim().toLowerCase()) + ".jpg");
+            const dest = path.join(__dirname, "/../../public/cdn/photo/" + mpath, (tag && ((_e = (_d = (_c = tag === null || tag === void 0 ? void 0 : tag.toString()) === null || _c === void 0 ? void 0 : _c.replaceAll("/", "")) === null || _d === void 0 ? void 0 : _d.trim()) === null || _e === void 0 ? void 0 : _e.toLowerCase())) + ".jpg");
             photo.mv(dest, function (err) {
                 if (err)
                     return res.status(500).send(err);
@@ -368,8 +651,8 @@ class AuthController {
             tag = tag.toString().replaceAll("/", "").trim().toLowerCase();
             const file = `${spath}${tag}.jpg`;
             const file2 = `${spath}${tag}.jpeg`;
-            var stats = fs.statSync(file);
-            var stats2 = fs.statSync(file2);
+            var stats = fs.existsSync(file);
+            var stats2 = fs.existsSync(file2);
             if (stats) {
                 yield (0, helper_1.rotateImage)(file);
                 const stphoto = `${req.protocol}://${req.get("host")}/api/photos/?tag=${tag.toString().toLowerCase()}&cache=${Math.random() * 1000}`;
@@ -407,9 +690,14 @@ class AuthController {
             }
             tag = tag.toString().replaceAll("/", "").replaceAll("_", "").trim().toLowerCase();
             const file = `${spath}${tag}.jpg`;
-            var stats = fs.statSync(file);
-            if (stats) {
+            const file2 = `${spath}${tag}.jpeg`;
+            if (fs.existsSync(file)) {
                 fs.unlinkSync(file);
+                const stphoto = `${req.protocol}://${req.get("host")}/api/photos/?tag=${tag.toString().toLowerCase()}&cache=${Math.random() * 1000}`;
+                res.status(200).json({ success: true, data: stphoto });
+            }
+            else if (fs.existsSync(file2)) {
+                fs.unlinkSync(file2);
                 const stphoto = `${req.protocol}://${req.get("host")}/api/photos/?tag=${tag.toString().toLowerCase()}&cache=${Math.random() * 1000}`;
                 res.status(200).json({ success: true, data: stphoto });
             }

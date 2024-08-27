@@ -12,8 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const evsModel_1 = __importDefault(require("../model/evsModel"));
 const authModel_1 = __importDefault(require("../model/authModel"));
+const evsModel_1 = __importDefault(require("../model/evsModel"));
 const ums_1 = require("../prisma/client/ums");
 const helper_1 = require("../util/helper");
 const sha1 = require('sha1');
@@ -225,7 +225,7 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             const { page = 1, pageSize = 9, keyword = '' } = req.query;
             const offset = (page - 1) * pageSize;
-            let searchCondition = {};
+            let searchCondition = { where: { admission: { default: true } } };
             try {
                 if (keyword)
                     searchCondition = {
@@ -582,13 +582,22 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             const { page = 1, pageSize = 9, keyword = '' } = req.query;
             const offset = (page - 1) * pageSize;
-            let searchCondition = {};
             try {
+                const sorted = yield ams.sortedApplicant.findMany({ where: { admission: { default: true } } });
+                const ids = sorted.map((r) => (r.serial));
+                let searchCondition = {
+                    where: {
+                        serial: { notIn: ids },
+                        admission: { default: true }
+                    }
+                };
                 if (keyword)
                     searchCondition = {
                         where: {
+                            serial: { notIn: ids },
+                            admission: { default: true },
                             OR: [
-                                { title: { contains: keyword } },
+                                { serial: { contains: keyword } },
                                 { stage: { title: { contains: keyword } } },
                                 { applyType: { title: { contains: keyword } } },
                             ],
@@ -776,11 +785,19 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             const { page = 1, pageSize = 9, keyword = '' } = req.query;
             const offset = (page - 1) * pageSize;
-            let searchCondition = {};
             try {
+                const admitted = yield ams.fresher.findMany({ where: { admission: { default: true } } });
+                const ids = admitted.map((r) => (r.serial));
+                let searchCondition = {
+                    where: {
+                        serial: { notIn: ids },
+                        admission: { default: true }
+                    }
+                };
                 if (keyword)
                     searchCondition = {
                         where: {
+                            serial: { notIn: ids },
                             admission: { default: true },
                             OR: [
                                 { serial: { contains: keyword } },
@@ -839,6 +856,7 @@ class AmsController {
             try {
                 const { serial } = req.body;
                 const sorted = yield ams.sortedApplicant.findFirst({ where: { serial } });
+                console.log(serial, sorted);
                 if (sorted)
                     throw ("Applicant already shortlisted!");
                 const voucher = yield ams.voucher.findFirst({ where: { serial } });
@@ -1006,40 +1024,59 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { serial, programId, semesterNum, sessionMode } = req.body;
-                const semcode = (0, helper_1.getBillCodePrisma)(Number(semesterNum));
                 const sorted = yield ams.sortedApplicant.findFirst({ where: { serial }, include: { profile: true, admission: { include: { session: true } } } });
                 const { sellType, admission: { id: admissionId, session: { id: sessionId } }, categoryId, profile: { titleId, countryId, regionId, religionId, disabilityId, maritalId, fname, lname, mname, gender, dob, hometown, phone, email, residentAddress } } = sorted !== null && sorted !== void 0 ? sorted : null;
+                // Bill Info
+                const semcode = (0, helper_1.getBillCodePrisma)(Number(semesterNum));
                 const bill = yield ams.bill.findFirst({ where: { programId, sessionId, type: countryId == '96b0a1d5-7899-4b9a-bcbe-7a72eee6572c' ? 'GH' : 'INT', OR: semcode } });
+                // Emergency & Guardian Info
                 const guardian = yield ams.stepGuardian.findFirst({ where: { serial } });
                 // Check email 
-                const emailUser = `${fname.trim().toLowerCase()}.${lname.trim().toLowerCase()}`;
-                const fetchEmail = yield ams.student.findMany({ where: { instituteEmail: { contains: emailUser } } });
+                let count = 1;
+                let isNew = true;
+                let uname = `${fname === null || fname === void 0 ? void 0 : fname.replaceAll(' ', '')}.${lname}`.toLowerCase();
+                while (isNew) {
+                    const ck = yield ams.student.findFirst({ where: { instituteEmail: { startsWith: `${uname}${count > 1 ? count : ''}` } } });
+                    if (ck)
+                        count = count + 1;
+                    else
+                        isNew = false;
+                }
+                const instituteEmail = `${uname}@${process.env.UMS_MAIL}`;
                 // Data for Population
-                const instituteEmail = `${fname}.${lname}${fetchEmail.length ? fetchEmail.length + 1 : ''}@${DOMAIN}`;
-                const username = serial; /* const username = instituteEmail; // AUCC */
+                const username = instituteEmail; // AUCC 
+                // const username = serial;  // MLK & Others
                 const password = pwdgen();
                 const studentData = { id: serial, fname, mname, lname, gender, dob, semesterNum, hometown, phone, email, address: residentAddress, instituteEmail, guardianName: `${guardian === null || guardian === void 0 ? void 0 : guardian.fname} ${(guardian === null || guardian === void 0 ? void 0 : guardian.mname) && (guardian === null || guardian === void 0 ? void 0 : guardian.mname) + ' '}${guardian === null || guardian === void 0 ? void 0 : guardian.lname}`, guardianPhone: guardian === null || guardian === void 0 ? void 0 : guardian.phone };
                 const fresherData = { sellType, semesterNum, sessionMode, username, password };
-                // const ssoData = { tag:serial, username:instituteEmail, password:sha1(), } // AUCC 
-                const ssoData = { tag: serial, username, password: sha1(password) }; // Others
+                const ssoData = { tag: serial, username: instituteEmail, password: sha1(password), }; // AUCC 
+                //const ssoData = { tag:serial, username, password:sha1(password) }  // MLK & Others
                 // Populate Student Information
-                const student = yield ams.student.create({
-                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, studentData), programId && ({ program: { connect: { id: programId } } })), titleId && ({ title: { connect: { id: titleId } } })), countryId && ({ country: { connect: { id: countryId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ disability: { connect: { id: disabilityId } } }))
-                });
-                // Populate Fresher Information
-                const resp = yield ams.fresher.create({
-                    data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, fresherData), admissionId && ({ admission: { connect: { id: admissionId } } })), programId && ({ program: { connect: { id: programId } } })), bill && ({ bill: { connect: { id: bill === null || bill === void 0 ? void 0 : bill.id } } })), sessionId && ({ session: { connect: { id: sessionId } } })), categoryId && ({ category: { connect: { id: categoryId } } })), serial && ({ student: { connect: { serial } } })), student && ({ student: { connect: { id: student === null || student === void 0 ? void 0 : student.id } } })),
-                });
-                // Populate SSO Account
-                const sso = yield ams.user.create({
-                    data: Object.assign(Object.assign({}, ssoData), { group: { connect: { id: 1 } } }),
-                });
-                // Update Applicant Status 
-                const ups = yield ams.sortedApplicant.update({
-                    where: { serial },
-                    data: { admitted: true },
+                const resp = yield ams.student.upsert({
+                    where: { id: serial },
+                    update: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, studentData), programId && ({ program: { connect: { id: programId } } })), titleId && ({ title: { connect: { id: titleId } } })), countryId && ({ country: { connect: { id: countryId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ disability: { connect: { id: disabilityId } } })),
+                    create: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, studentData), programId && ({ program: { connect: { id: programId } } })), titleId && ({ title: { connect: { id: titleId } } })), countryId && ({ country: { connect: { id: countryId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ disability: { connect: { id: disabilityId } } }))
                 });
                 if (resp) {
+                    // Populate SSO Account
+                    yield ams.user.upsert({
+                        where: { tag: serial },
+                        create: Object.assign(Object.assign({}, ssoData), { group: { connect: { id: 1 } } }),
+                        update: Object.assign(Object.assign({}, ssoData), { group: { connect: { id: 1 } } }),
+                    });
+                    // Update Applicant Status 
+                    yield ams.sortedApplicant.update({
+                        where: { serial },
+                        data: { admitted: true },
+                    });
+                    // Populate Fresher Information
+                    yield ams.fresher.create({
+                        data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, fresherData), admissionId && ({ admission: { connect: { id: admissionId } } })), programId && ({ program: { connect: { id: programId } } })), bill && ({ bill: { connect: { id: bill === null || bill === void 0 ? void 0 : bill.id } } })), sessionId && ({ session: { connect: { id: sessionId } } })), categoryId && ({ category: { connect: { id: categoryId } } })), serial && ({ student: { connect: { id: serial } } })),
+                    });
+                    // Send Applicant Notification
+                    const msg = `Congratulations! You have been granted an admission into AUCC, Your student portal access is Username: ${instituteEmail}, Password: ${password}`;
+                    sms(phone, msg);
+                    // Return Response
                     res.status(200).json(resp);
                 }
                 else {
@@ -1194,6 +1231,26 @@ class AmsController {
             }
         });
     }
+    fetchAwardList(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const resp = yield ams.awardClass.findMany({
+                    where: { status: true },
+                    orderBy: { id: 'asc' }
+                });
+                if (resp) {
+                    res.status(200).json(resp);
+                }
+                else {
+                    res.status(204).json({ message: `no record found` });
+                }
+            }
+            catch (error) {
+                console.log(error);
+                return res.status(500).json({ message: error.message });
+            }
+        });
+    }
     fetchStageList(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -1298,14 +1355,16 @@ class AmsController {
                 delete req.body.serial;
                 delete req.body.applyTypeId;
                 delete req.body.categoryId;
+                // Admission Session
+                const voucher = yield ams.voucher.findFirst({ where: { serial } });
                 // Application Form Schema for Chosen Category
                 const form = yield ams.amsForm.findFirst({ where: { categoryId } });
                 if (form)
                     req.body.meta = form === null || form === void 0 ? void 0 : form.meta;
                 const resp = yield ams.applicant.upsert({
                     where: { serial },
-                    create: Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), { serial }), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })),
-                    update: Object.assign(Object.assign(Object.assign({}, req.body), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } }))
+                    create: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), { serial }), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })), voucher && ({ admission: { connect: { id: voucher === null || voucher === void 0 ? void 0 : voucher.admissionId } } })),
+                    update: Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), stageId && ({ stage: { connect: { id: stageId } } })), applyTypeId && ({ applyType: { connect: { id: applyTypeId } } })), voucher && ({ admission: { connect: { id: voucher === null || voucher === void 0 ? void 0 : voucher.admissionId } } }))
                 });
                 if (resp) {
                     res.status(200).json(resp);
@@ -1359,6 +1418,8 @@ class AmsController {
                     update: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, req.body), titleId && ({ title: { connect: { id: titleId } } })), regionId && ({ region: { connect: { id: regionId } } })), religionId && ({ religion: { connect: { id: religionId } } })), countryId && ({ country: { connect: { id: countryId } } })), nationalityId && ({ nationality: { connect: { id: nationalityId } } })), maritalId && ({ marital: { connect: { id: maritalId } } })), disabilityId && ({ marital: { connect: { id: disabilityId } } }))
                 });
                 if (resp) {
+                    // Update Applicant with ProfileId
+                    yield ams.applicant.update({ where: { serial }, data: { profile: { connect: { serial } } } });
                     res.status(200).json(resp);
                 }
                 else {
@@ -1550,14 +1611,15 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = req.body;
-                const resp = yield ams.stepEmployment.upsert(data === null || data === void 0 ? void 0 : data.map((row) => {
+                yield ams.stepEmployment.deleteMany({ where: { serial: req.body[0].serial } });
+                const resp = yield Promise.all(data === null || data === void 0 ? void 0 : data.map((row) => __awaiter(this, void 0, void 0, function* () {
                     const { id } = row;
-                    return ({
-                        where: { id: (id || null) },
+                    return yield ams.stepEmployment.upsert({
+                        where: { id: (id || '') },
                         create: row,
                         update: row
                     });
-                }));
+                })));
                 if (resp) {
                     res.status(200).json(resp);
                 }
@@ -1655,8 +1717,10 @@ class AmsController {
                         update: Object.assign(Object.assign(Object.assign({}, row), programId && ({ program: { connect: { id: programId } } })), majorId && ({ major: { connect: { id: majorId } } }))
                     });
                 })));
-                console.log(resp);
                 if (resp) {
+                    // Update Applicant First Choice
+                    //const ch = await ams.stepChoice.findFirst({ where: { serial }})
+                    yield ams.applicant.update({ where: { serial: req.body[0].serial }, data: { choiceId: resp[0].id } });
                     res.status(200).json(resp);
                 }
                 else {
@@ -1693,16 +1757,16 @@ class AmsController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const data = req.body;
-                const resp = yield ams.stepReferee.upsert(data === null || data === void 0 ? void 0 : data.map((row) => {
+                yield ams.stepReferee.deleteMany({ where: { serial: req.body[0].serial } });
+                const resp = yield Promise.all(data === null || data === void 0 ? void 0 : data.map((row) => __awaiter(this, void 0, void 0, function* () {
                     const { id, titleId } = row;
                     row === null || row === void 0 ? true : delete row.titleId;
-                    row === null || row === void 0 ? true : delete row.id;
-                    return ({
-                        where: { id: (id || null) },
+                    return yield ams.stepReferee.upsert({
+                        where: { id: (id || '') },
                         create: Object.assign(Object.assign({}, row), titleId && ({ title: { connect: { id: titleId } } })),
-                        update: Object.assign(Object.assign({}, row), titleId && ({ title: { connect: { id: titleId } } }))
+                        update: Object.assign(Object.assign({}, row), titleId && ({ title: { connect: { id: titleId } } })),
                     });
-                }));
+                })));
                 if (resp) {
                     res.status(200).json(resp);
                 }

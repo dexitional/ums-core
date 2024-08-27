@@ -1,8 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { v4 as uuid } from 'uuid';
-import EvsModel from '../model/evsModel'
-import AuthModel from '../model/authModel'
-import { PrismaClient } from '../prisma/client/ums'
+import { Request, Response } from "express";
+import AuthModel from '../model/authModel';
+import EvsModel from '../model/evsModel';
+import { PrismaClient } from '../prisma/client/ums';
 import { getBillCodePrisma } from "../util/helper";
 const sha1 = require('sha1')
 const { customAlphabet } = require("nanoid");
@@ -213,7 +212,7 @@ export default class AmsController {
   async fetchVouchers(req: Request,res: Response) {
       const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
       const offset = (page - 1) * pageSize;
-      let searchCondition = { }
+      let searchCondition:any = { where: { admission: { default: true } } }
       try {
          if(keyword) searchCondition = { 
             where: { 
@@ -559,17 +558,30 @@ export default class AmsController {
    async fetchApplicants(req: Request,res: Response) {
       const { page = 1, pageSize = 9, keyword = '' } :any = req.query;
       const offset = (page - 1) * pageSize;
-      let searchCondition = { }
+      
       try {
+         const sorted = await ams.sortedApplicant.findMany({ where: { admission: { default: true }}});
+         const ids = sorted.map((r:any) => (r.serial));
+         
+         let searchCondition:any = { 
+            where:{ 
+             serial: { notIn: ids },
+             admission: { default: true } 
+            }
+          }
+
          if(keyword) searchCondition = { 
             where: { 
+               serial: { notIn: ids },
+               admission: { default: true },
                OR: [
-                  { title: { contains: keyword } },
+                  { serial: { contains: keyword } },
                   { stage: { title: { contains: keyword }} },
                   { applyType: { title: { contains: keyword }} },
                ],
             }
          }
+         
          const resp = await ams.$transaction([
             ams.applicant.count({
                ...(searchCondition),
@@ -748,10 +760,21 @@ export default class AmsController {
    async fetchShortlists(req: Request,res: Response) {
       const { page = 1, pageSize = 9, keyword = '' }: any = req.query;
       const offset = (page - 1) * pageSize;
-      let searchCondition = { }
+      
       try {
+         const admitted = await ams.fresher.findMany({ where: { admission: { default: true }}});
+         const ids = admitted.map((r:any) => (r.serial));
+         
+         let searchCondition:any = { 
+            where: { 
+               serial: { notIn: ids },
+               admission: { default: true } 
+            }
+         }
+
          if(keyword) searchCondition = { 
             where: { 
+               serial: { notIn: ids },
                admission: { default: true },
                OR: [
                   { serial: { contains: keyword } },
@@ -812,6 +835,8 @@ export default class AmsController {
       try {
          const { serial } = req.body
          const sorted:any = await ams.sortedApplicant.findFirst({ where:{ serial }})
+         console.log(serial,sorted);
+         
          if(sorted) throw("Applicant already shortlisted!")
 
          const voucher:any = await ams.voucher.findFirst({ where:{ serial }})
@@ -990,26 +1015,38 @@ export default class AmsController {
    async postMatriculant(req: Request,res: Response) {
          try {
          const { serial,programId,semesterNum,sessionMode } = req.body
-         const semcode = getBillCodePrisma(Number(semesterNum))
+         
          const sorted:any = await ams.sortedApplicant.findFirst({ where:{ serial }, include: { profile: true, admission:{ include: { session: true}} }})
          const { sellType, admission:{ id:admissionId, session:{ id:sessionId } }, categoryId, profile: { titleId,countryId,regionId,religionId,disabilityId,maritalId,fname,lname,mname,gender,dob,hometown,phone,email,residentAddress  } } = sorted ?? null;
+         // Bill Info
+         const semcode = getBillCodePrisma(Number(semesterNum))
          const bill:any = await ams.bill.findFirst({ where:{ programId,sessionId, type: countryId == '96b0a1d5-7899-4b9a-bcbe-7a72eee6572c' ? 'GH':'INT', OR: semcode }})
+         // Emergency & Guardian Info
          const guardian:any = await ams.stepGuardian.findFirst({ where:{ serial }})
          // Check email 
-         const emailUser = `${fname.trim().toLowerCase()}.${lname.trim().toLowerCase()}`;
-         const fetchEmail = await ams.student.findMany({ where: { instituteEmail:{ contains: emailUser }}})
+         let count = 1;
+         let isNew = true;
+         let uname = `${fname?.replaceAll(' ','')}.${lname}`.toLowerCase();
+         while(isNew){
+            const ck =  await ams.student.findFirst({ where: { instituteEmail: { startsWith: `${uname}${count > 1 ? count:''}` } }});
+            if(ck) count = count+1;
+            else isNew = false;
+         }
+         const instituteEmail =  `${uname}@${process.env.UMS_MAIL}`;
          // Data for Population
-         const instituteEmail = `${fname}.${lname}${fetchEmail.length ? fetchEmail.length+1 : '' }@${DOMAIN}`;
-         const username = serial; /* const username = instituteEmail; // AUCC */
+         const username = instituteEmail; // AUCC 
+         // const username = serial;  // MLK & Others
+         
          const password = pwdgen();
          const studentData = { id:serial,fname,mname,lname,gender,dob,semesterNum,hometown,phone,email,address:residentAddress,instituteEmail,guardianName:`${guardian?.fname} ${guardian?.mname && guardian?.mname+' '}${guardian?.lname}`, guardianPhone: guardian?.phone }
          const fresherData = { sellType, semesterNum, sessionMode, username, password }
-         // const ssoData = { tag:serial, username:instituteEmail, password:sha1(), } // AUCC 
-         const ssoData = { tag:serial, username, password:sha1(password) }  // Others
+         const ssoData = { tag:serial, username:instituteEmail, password:sha1(password), } // AUCC 
+         //const ssoData = { tag:serial, username, password:sha1(password) }  // MLK & Others
          
          // Populate Student Information
-         const student = await ams.student.create({
-            data:{
+         const resp = await ams.student.upsert({
+            where: { id: serial},
+            update: {
                ... studentData,
                ... programId && ({ program: { connect: { id: programId }}}),
                ... titleId && ({ title: { connect: { id: titleId }}}),
@@ -1018,35 +1055,56 @@ export default class AmsController {
                ... religionId && ({ religion: { connect: { id: religionId }}}),
                ... maritalId && ({ marital: { connect: { id: maritalId }}}),
                ... disabilityId && ({ disability: { connect: { id: disabilityId }}}),
-            } 
-         })
-         // Populate Fresher Information
-         const resp = await ams.fresher.create({
-            data: {
-               ... fresherData,
-               ... admissionId && ({ admission: { connect: { id: admissionId }}}),
+            },
+            create:{
+               ... studentData,
                ... programId && ({ program: { connect: { id: programId }}}),
-               ... bill && ({ bill: { connect: { id: bill?.id }}}),
-               ... sessionId && ({ session: { connect: { id: sessionId }}}),
-               ... categoryId && ({ category: { connect: { id: categoryId }}}),
-               ... serial && ({ student: { connect: { serial }}}),
-               ... student && ({ student: { connect: { id: student?.id }}}),
-            },
+               ... titleId && ({ title: { connect: { id: titleId }}}),
+               ... countryId && ({ country: { connect: { id: countryId }}}),
+               ... regionId && ({ region: { connect: { id: regionId }}}),
+               ... religionId && ({ religion: { connect: { id: religionId }}}),
+               ... maritalId && ({ marital: { connect: { id: maritalId }}}),
+               ... disabilityId && ({ disability: { connect: { id: disabilityId }}}),
+            }
          })
-         // Populate SSO Account
-         const sso = await ams.user.create({
-            data: {
-               ... ssoData,
-               group: { connect: { id: 1 }},
-            },
-         })
-         // Update Applicant Status 
-         const ups = await ams.sortedApplicant.update({
-            where: { serial },
-            data: { admitted: true },
-         })
-
+         
          if(resp){
+            // Populate SSO Account
+            await ams.user.upsert({
+               where: { tag: serial },
+               create: {
+                  ... ssoData,
+                  group: { connect: { id: 1 }},
+               },
+               update: {
+                  ... ssoData,
+                  group: { connect: { id: 1 }},
+               },
+            })
+            // Update Applicant Status 
+            await ams.sortedApplicant.update({
+               where: { serial },
+               data: { admitted: true },
+            })
+
+            // Populate Fresher Information
+            await ams.fresher.create({
+               data: {
+                  ... fresherData,
+                  ... admissionId && ({ admission: { connect: { id: admissionId }}}),
+                  ... programId && ({ program: { connect: { id: programId }}}),
+                  ... bill && ({ bill: { connect: { id: bill?.id }}}),
+                  ... sessionId && ({ session: { connect: { id: sessionId }}}),
+                  ... categoryId && ({ category: { connect: { id: categoryId }}}),
+                  ... serial && ({ student: { connect: { id: serial }}}),
+               },
+            })
+           
+            // Send Applicant Notification
+            const msg = `Congratulations! You have been granted an admission into AUCC, Your student portal access is Username: ${instituteEmail}, Password: ${password}`
+            sms(phone,msg);
+           
+            // Return Response
             res.status(200).json(resp)
          } else {
             res.status(204).json({ message: `no records found` })
@@ -1189,6 +1247,23 @@ export default class AmsController {
       }
    }
 
+   async fetchAwardList(req: Request,res: Response) {
+      try {
+         const resp = await ams.awardClass.findMany({
+            where: { status: true },
+            orderBy: { id: 'asc' }
+         })
+         if(resp){
+            res.status(200).json(resp)
+         } else {
+            res.status(204).json({ message: `no record found` })
+         }
+      } catch (error: any) {
+         console.log(error)
+         return res.status(500).json({ message: error.message }) 
+      }
+   }
+
    async fetchStageList(req: Request,res: Response) {
       try {
          const resp = await ams.stage.findMany({
@@ -1277,6 +1352,8 @@ export default class AmsController {
          delete req.body.stageId; delete req.body.serial;
          delete req.body.applyTypeId; 
          delete req.body.categoryId; 
+         // Admission Session
+         const voucher = await ams.voucher.findFirst({ where: { serial }})
          // Application Form Schema for Chosen Category
          const form = await ams.amsForm.findFirst({ where: { categoryId }})
          if(form) req.body.meta = form?.meta
@@ -1288,11 +1365,13 @@ export default class AmsController {
                serial, 
                ... stageId && ({ stage: { connect: { id: stageId }}}),
                ... applyTypeId && ({ applyType: { connect: { id: applyTypeId }}}),
+               ... voucher && ({ admission: { connect: { id: voucher?.admissionId }}}),
             },
             update: {
                ...req.body, 
                ... stageId && ({ stage: { connect: { id: stageId }}}),
                ... applyTypeId && ({ applyType: { connect: { id: applyTypeId }}}),
+               ... voucher && ({ admission: { connect: { id: voucher?.admissionId }}}),
             }
          })
          
@@ -1361,6 +1440,8 @@ export default class AmsController {
          })
          
          if(resp){
+            // Update Applicant with ProfileId
+            await ams.applicant.update({ where: { serial }, data: { profile: { connect: { serial }}} })
             res.status(200).json(resp)
          } else {
             res.status(204).json({ message: `no record found` })
@@ -1550,6 +1631,7 @@ export default class AmsController {
          } else {
             res.status(204).json({ message: `no record found` })
          }
+         
       } catch (error: any) {
          console.log(error)
          return res.status(500).json({ message: error.message }) 
@@ -1559,10 +1641,11 @@ export default class AmsController {
    async saveStepEmployment(req: Request,res: Response) {
       try {
          const data = req.body;
-         const resp = await ams.stepEmployment.upsert(data?.map((row:any) => {
+         await ams.stepEmployment.deleteMany({ where: { serial: req.body[0].serial }});
+         const resp = await Promise.all(data?.map(async (row:any) => {
             const { id } = row;
-            return ({
-               where: { id: (id || null) },
+            return await ams.stepEmployment.upsert({
+               where: { id: (id || '') },
                create: row,
                update: row
             })
@@ -1573,6 +1656,7 @@ export default class AmsController {
          } else {
             res.status(204).json({ message: `no record found` })
          }
+         
       } catch (error: any) {
          console.log(error)
          return res.status(500).json({ message: error.message }) 
@@ -1667,8 +1751,11 @@ export default class AmsController {
                }
             })
          }))
-         console.log(resp)
          if(resp){
+            // Update Applicant First Choice
+             //const ch = await ams.stepChoice.findFirst({ where: { serial }})
+             await ams.applicant.update({ where: { serial:req.body[0].serial }, data: { choiceId: resp[0].id } })
+
             res.status(200).json(resp)
          } else {
             res.status(204).json({ message: `no record found` })
@@ -1698,21 +1785,22 @@ export default class AmsController {
 
    async saveStepReferee(req: Request,res: Response) {
       try {
+        
          const data = req.body;
-         const resp = await ams.stepReferee.upsert(data?.map((row:any) => {
-            const { id, titleId } = row;
-            delete row?.titleId; delete row?.id;
-            
-            return ({
-               where: { id: (id || null) },
+         await ams.stepReferee.deleteMany({ where: { serial: req.body[0].serial }});
+         const resp = await Promise.all(data?.map(async (row:any) => {
+            const { id,titleId } = row;
+            delete row?.titleId;
+            return await ams.stepReferee.upsert({
+               where: { id: (id || '') },
                create: { 
                   ...row, 
                   ... titleId && ({ title: { connect: { id: titleId }}}),
                },
-               update: {
+               update: { 
                   ...row, 
                   ... titleId && ({ title: { connect: { id: titleId }}}),
-               }
+               },
             })
          }))
          

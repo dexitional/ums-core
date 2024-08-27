@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const jwt = require("jsonwebtoken");
-const db = require("../models");
-const User = db.user;
 const isEvsAdmin = (req, res, next) => {
     // Loop and Check if role exist -- next(); return; [ Pass parameter req.userId ]
     // Return res.status(403).send({message: "Require Admin Role!"}); return 

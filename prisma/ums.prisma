@@ -75,6 +75,7 @@ enum deferStatus {
   PENDED
   APPROVED
   DECLINED
+  RESUMED
 }
 
 enum receiver {
@@ -213,6 +214,36 @@ enum studyMode {
   M
   W
   E
+  A
+  f
+}
+
+enum EvsActionType {
+  STAGED
+  STARTED
+  ENDED
+}
+
+enum backlogType {
+  REGISTRATION
+  ASSESSMENT
+  DELETION
+}
+
+enum backlogInsertType {
+  SINGLE
+  BULK
+}
+
+// GENERAL LOGGING
+
+model log {
+  id        String   @id @default(uuid())
+  action    String   @db.VarChar(255)
+  user      String?  @db.VarChar(255)
+  student   String?  @db.VarChar(255)
+  meta      Json
+  createdAt DateTime @default(now())
 }
 
 // AIS - ACADEMIC MANAGEMENT  MODELS
@@ -321,9 +352,10 @@ model scheme {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  program    program[]
-  assessment assessment[]
-  resit      resit[]
+  program         program[]
+  assessment      assessment[]
+  resit           resit[]
+  activityBacklog activityBacklog[]
 
   @@map("ais_scheme")
 }
@@ -355,6 +387,7 @@ model unit {
   fromUnit  transfer[]  @relation("fromUnit")
   toUnit    transfer[]  @relation("toUnit")
   staff     staff[]
+  sheet     sheet[]
 }
 
 model mode {
@@ -372,8 +405,8 @@ model course {
   id            String        @id
   title         String        @db.VarChar(450)
   creditHour    Int
-  theoryHour    Int
-  practicalHour Int
+  theoryHour    Int?
+  practicalHour Int?
   remark        courseRemark?
   status        Boolean       @default(true)
   createdAt     DateTime      @default(now())
@@ -389,12 +422,14 @@ model course {
 
 model major {
   id        String   @id @default(uuid())
+  programId String?
   shortName String?  @db.VarChar(255)
   longName  String?  @db.VarChar(355)
   status    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  program    program?     @relation(fields: [programId], references: [id])
   student    student[]
   structure  structure[]
   sheet      sheet[]
@@ -437,6 +472,7 @@ model program {
   bill       bill[]
   fresher    fresher[]
   stepChoice stepChoice[]
+  major      major[]
 
   @@map("ais_program")
 }
@@ -445,14 +481,14 @@ model student {
   id                String             @id @unique
   indexno           String?            @unique @db.VarChar(50)
   titleId           String?
-  fname             String             @db.VarChar(255)
+  fname             String?            @db.VarChar(255)
   mname             String?            @db.VarChar(350)
-  lname             String             @db.VarChar(255)
+  lname             String?            @db.VarChar(255)
   gender            String?            @db.VarChar(20)
   dob               DateTime?          @db.DateTime(3)
   maritalId         String?
   email             String?            @db.VarChar(255)
-  phone             String?            @db.VarChar(20)
+  phone             String?            @db.VarChar(25)
   hometown          String?            @db.VarChar(255)
   address           String?            @db.VarChar(350)
   guardianName      String?            @db.VarChar(350)
@@ -466,7 +502,7 @@ model student {
   programId         String?
   majorId           String?
   progCount         Int?               @db.Int
-  semesterNum       Int                @db.Int
+  semesterNum       Int?               @db.Int
   semesterDone      Int?               @db.Int
   creditDone        Int?               @db.Int
   entrySemesterNum  Int?               @db.Int
@@ -485,7 +521,7 @@ model student {
   instituteEmail    String?            @db.VarChar(350)
   instituteAffliate String?            @db.VarChar(350)
   flagPardon        Boolean            @default(false)
-  accountNet        Float              @default(0) @db.Float
+  accountNet        Float?             @default(0) @db.Float
 
   title       title?      @relation(fields: [titleId], references: [id])
   nationality country?    @relation("studentNationality", fields: [nationalityId], references: [id])
@@ -517,7 +553,7 @@ model session {
   id              String          @id @default(uuid())
   tag             String?         @default("main") @db.VarChar(50)
   title           String          @db.VarChar(255)
-  year            Int?            @db.Int
+  year            String?         @db.VarChar(50)
   semester        semesterNumbers
   registerStart   DateTime?
   registerEnd     DateTime?
@@ -534,6 +570,7 @@ model session {
   admissionPrefix String?
   assignLateSheet Boolean         @default(false)
   progressStudent Boolean         @default(false)
+  stageSheet      Boolean         @default(false)
   default         Boolean         @default(false)
   status          Boolean         @default(true)
   createdAt       DateTime        @default(now())
@@ -551,6 +588,7 @@ model session {
   studentAccount     studentAccount[]
   admission          admission[]
   fresher            fresher[]
+  activityBacklog    activityBacklog[]
 
   @@map("ais_session")
 }
@@ -661,6 +699,7 @@ model activityDefer {
   statusBy        String?
   start           DateTime?
   end             DateTime?
+  createdBy       String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -668,6 +707,27 @@ model activityDefer {
   student student? @relation(fields: [studentId], references: [id])
 
   @@map("ais_activity_defer")
+}
+
+model activityBacklog {
+  id         String       @id @default(uuid())
+  sessionId  String?
+  schemeId   String?
+  title      String?
+  type       backlogType?
+  meta       Json?
+  status     Boolean      @default(false)
+  approvedBy String?
+  createdBy  String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  session  session? @relation(fields: [sessionId], references: [id])
+  scheme   scheme?  @relation(fields: [schemeId], references: [id])
+  creator  staff?   @relation("creator", fields: [createdBy], references: [staffNo])
+  approver staff?   @relation("approver", fields: [approvedBy], references: [staffNo])
+
+  @@map("ais_activity_backlog")
 }
 
 model assessment {
@@ -680,20 +740,22 @@ model assessment {
   semesterNum Int
   classScore  Float?
   examScore   Float?
-  totalScore  Float
+  totalScore  Float?
   type        scoreType
   scoreA      Float?
   scoreB      Float?
   scoreC      Float?
-  status      Boolean   @default(true)
+  status      Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  session session? @relation(fields: [sessionId], references: [id])
-  scheme  scheme?  @relation(fields: [schemeId], references: [id])
-  course  course?  @relation(fields: [courseId], references: [id])
-  student student? @relation(fields: [indexno], references: [id])
+  session session @relation(fields: [sessionId], references: [id])
+  scheme  scheme  @relation(fields: [schemeId], references: [id])
+  course  course  @relation(fields: [courseId], references: [id])
+  student student @relation(fields: [indexno], references: [indexno])
 
+  @@index([sessionId, courseId, indexno])
+  @@index([sessionId, courseId, semesterNum])
   @@map("ais_assessment")
 }
 
@@ -737,7 +799,7 @@ model sheet {
   assessorId    String?
   certifierId   String?
   semesterNum   Int
-  sessionMode   String?  @db.VarChar(50)
+  studyMode     String?  @db.VarChar(50)
   studentCount  Int?     @default(0)
   completeRatio Float?
   assessed      Boolean  @default(false)
@@ -751,6 +813,7 @@ model sheet {
   program   program? @relation(fields: [programId], references: [id])
   major     major?   @relation(fields: [majorId], references: [id])
   course    course?  @relation(fields: [courseId], references: [id])
+  unit      unit?    @relation(fields: [unitId], references: [id])
   assignee  staff?   @relation("assignee", fields: [assignStaffId], references: [staffNo])
   assessor  staff?   @relation("assessor", fields: [assessorId], references: [staffNo])
   certifier staff?   @relation("certifier", fields: [certifierId], references: [staffNo])
@@ -866,23 +929,25 @@ model bankacc {
 }
 
 model bill {
-  id                String            @id @default(uuid())
+  id                String             @id @default(uuid())
   sessionId         String
   bankaccId         String?
   programId         String?
-  studentIds        Json?
-  mainGroupCode     String            @db.VarChar(4)
-  discountGroupCode String            @db.VarChar(4)
-  narrative         String            @db.VarChar(255)
-  type              billGroup         @default(GH)
-  residentialStatus residentialStatus @default(RESIDENTIAL)
-  currency          currency          @default(GHC)
+  includeStudentIds Json?
+  excludeStudentIds Json?
+  mainGroupCode     String             @db.VarChar(4)
+  discountGroupCode String?            @db.VarChar(4)
+  narrative         String             @db.VarChar(255)
+  type              billGroup          @default(GH)
+  residentialStatus residentialStatus? @default(RESIDENTIAL)
+  currency          currency           @default(GHC)
   amount            Float
-  discount          Float
-  quota             Float
-  posted            Boolean           @default(true)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  discount          Float?
+  quota             Float?
+  posted            Boolean            @default(false)
+  status            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   session session? @relation(fields: [sessionId], references: [id])
   bankacc bankacc? @relation(fields: [bankaccId], references: [id])
@@ -890,8 +955,25 @@ model bill {
 
   studentAccount studentAccount[]
   fresher        fresher[]
+  activityBill   activityBill[]
 
   @@map("fms_bill")
+}
+
+model activityBill {
+  id        String   @id @default(uuid())
+  billId    String?
+  userId    Int?
+  amount    Float?
+  discount  Float?
+  receivers Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bill bill? @relation(fields: [billId], references: [id])
+  user user? @relation(fields: [userId], references: [id])
+
+  @@map("fms_activity_bill")
 }
 
 model charge {
@@ -929,15 +1011,17 @@ model collector {
 }
 
 model transtype {
-  id         Int        @id @default(autoincrement())
-  title      String     @db.VarChar(255)
-  visibility visibility
-  status     Boolean    @default(true)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(255)
+  visibility  visibility @default(PUBLIC)
+  amountInGhc Float?
+  amountInUsd Float?
+  remark      String?    @db.VarChar(350)
+  status      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   transaction transaction[]
-  servicefee  servicefee[]
 
   @@map("fms_transtype")
 }
@@ -950,8 +1034,8 @@ model transaction {
   studentId   String?
   reference   String?
   transtag    String
-  payType     payType  @default(BANK)
-  feeType     feeType  @default(NORMAL)
+  payType     payType? @default(BANK)
+  feeType     feeType? @default(NORMAL)
   currency    currency @default(GHC)
   amount      Float
   createdAt   DateTime @default(now())
@@ -965,37 +1049,26 @@ model transaction {
   studentAccount         studentAccount[]
   activityFinanceVoucher activityFinanceVoucher[]
 
+  @@index([transtag])
+  @@index([studentId])
+  @@index([reference])
   @@map("fms_transaction")
 }
 
-model servicefee {
-  transtypeId Int      @unique
-  title       String   @db.VarChar(255)
-  amountInGhc Float
-  amountInUsd Float
-  status      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  transtype transtype? @relation(fields: [transtypeId], references: [id])
-
-  @@map("fms_servicefee")
-}
-
 model studentAccount {
-  id         String       @id @default(uuid())
+  id         String        @id @default(uuid())
   studentId  String?
   transactId String?
   sessionId  String?
   chargeId   String?
   billId     String?
-  type       transactType
-  narrative  String       @db.VarChar(255)
-  currency   currency     @default(GHC)
+  type       transactType?
+  narrative  String        @db.VarChar(255)
+  currency   currency      @default(GHC)
   amount     Float
-  status     Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  status     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   student     student?     @relation(fields: [studentId], references: [id])
   transaction transaction? @relation(fields: [transactId], references: [id])
@@ -1003,6 +1076,11 @@ model studentAccount {
   charge      charge?      @relation(fields: [chargeId], references: [id])
   bill        bill?        @relation(fields: [billId], references: [id])
 
+  @@index([billId])
+  @@index([chargeId])
+  @@index([narrative])
+  @@index([studentId])
+  @@index([sessionId])
   @@map("fms_studaccount")
 }
 
@@ -1021,10 +1099,10 @@ model activityFinanceVoucher {
   id          String   @id @default(uuid())
   transactId  String?
   admissionId String?
-  serial      Int?
+  serial      String?
   pin         String?  @db.VarChar(8)
   buyerName   String   @db.VarChar(255)
-  buyerPhone  String   @db.VarChar(10)
+  buyerPhone  String   @db.VarChar(15)
   smsCode     Int?
   generated   Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -1137,6 +1215,16 @@ model gradeWeight {
   stepGrade    stepGrade[]
 
   @@map("ams_grade_weight")
+}
+
+model awardClass {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(100)
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ams_award_class")
 }
 
 model documentCategory {
@@ -1252,7 +1340,7 @@ model admissionLetter {
 model voucher {
   serial         String    @id
   pin            String
-  admissionId    String
+  admissionId    String?
   vendorId       String?
   categoryId     String?
   sellType       Int?
@@ -1301,6 +1389,7 @@ model admission {
   voucher                voucher[]
   sortedApplicant        sortedApplicant[]
   fresher                fresher[]
+  applicant              applicant[]
 
   @@map("ams_admission")
 }
@@ -1363,6 +1452,7 @@ model fresher {
 
 model applicant {
   serial      String    @id
+  admissionId String
   stageId     String
   applyTypeId String
   choiceId    String?
@@ -1382,6 +1472,7 @@ model applicant {
   applyType applyType?   @relation(fields: [applyTypeId], references: [id])
   choice    stepChoice?  @relation(fields: [choiceId], references: [id])
   profile   stepProfile? @relation(fields: [profileId], references: [serial])
+  admission admission?   @relation(fields: [admissionId], references: [id])
 
   @@map("ams_applicant")
 }
@@ -1572,6 +1663,111 @@ model stepReferee {
   @@map("ams_step_referee")
 }
 
+// EVS - ELECTA VOTING  MODELS
+
+model election {
+  id             Int           @id @default(autoincrement())
+  groupId        Int?
+  type           String        @db.VarChar(300)
+  title          String?       @db.VarChar(450)
+  tag            String?       @db.VarChar(100)
+  logo           String?       @db.VarChar(450)
+  admins         Json?
+  voterCount     Int           @default(0)
+  voterList      Json?
+  voterData      Json?
+  allowMonitor   Boolean       @default(false)
+  allowEcMonitor Boolean       @default(false)
+  allowVip       Boolean       @default(false)
+  allowEcVip     Boolean       @default(false)
+  allowResult    Boolean       @default(false)
+  allowEcResult  Boolean       @default(false)
+  allowMask      Boolean       @default(false)
+  autoStop       Boolean       @default(false)
+  startAt        DateTime?
+  endAt          DateTime?
+  action         EvsActionType @default(STAGED)
+  status         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  group     group?      @relation(fields: [groupId], references: [id])
+  portfolio portfolio[]
+  elector   elector[]
+  attack    attack[]
+
+  @@map("evs_election")
+}
+
+model elector {
+  id         Int      @id @default(autoincrement())
+  electionId Int
+  tag        String?  @db.VarChar(100)
+  name       String?  @db.VarChar(450)
+  descriptor String?  @db.VarChar(450)
+  gender     String?  @db.VarChar(1)
+  voteTime   DateTime @default(now())
+  voteSum    String?  @db.VarChar(750)
+  voteHash   String?  @db.VarChar(100)
+  voteIp     String?  @db.VarChar(50)
+  voteStatus Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  election election? @relation(fields: [electionId], references: [id])
+
+  @@map("evs_elector")
+}
+
+model portfolio {
+  id         Int     @id @default(autoincrement())
+  electionId Int
+  title      String? @db.Text
+  status     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  election  election?   @relation(fields: [electionId], references: [id])
+  candidate candidate[]
+
+  @@map("evs_portfolio")
+}
+
+model candidate {
+  id          Int     @id @default(autoincrement())
+  portfolioId Int?
+  tag         String? @db.VarChar(100)
+  name        String? @db.VarChar(450)
+  teaser      String? @db.VarChar(100)
+  orderNo     Int     @default(1)
+  photo       String? @db.VarChar(450)
+  votes       Int     @default(0)
+  status      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  portfolio portfolio? @relation(fields: [portfolioId], references: [id])
+
+  @@map("evs_candidate")
+}
+
+model attack {
+  id         Int      @id @default(autoincrement())
+  electionId Int?
+  tag        String?  @db.VarChar(100)
+  location   String?  @db.VarChar(450)
+  ip         String?  @db.VarChar(50)
+  meta       String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  election election? @relation(fields: [electionId], references: [id])
+
+  @@map("evs_attack")
+}
+
 // SSO - IDENTITY MANAGEMENT  MODELS
 
 model app {
@@ -1612,7 +1808,8 @@ model group {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user user[]
+  user     user[]
+  election election[]
 
   @@map("sso_group")
 }
@@ -1620,7 +1817,7 @@ model group {
 model user {
   id        Int      @id @default(autoincrement())
   groupId   Int
-  tag       String   @db.VarChar(50)
+  tag       String   @unique @db.VarChar(50)
   username  String   @db.VarChar(50)
   password  String   @db.VarChar(50)
   unlockPin String?  @db.VarChar(4)
@@ -1629,9 +1826,10 @@ model user {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  group    group?     @relation(fields: [groupId], references: [id])
-  userRole userRole[]
-  provider provider[]
+  group        group?         @relation(fields: [groupId], references: [id], onDelete: NoAction)
+  userRole     userRole[]
+  provider     provider[]
+  activityBill activityBill[]
 
   @@map("sso_user")
 }
@@ -1645,8 +1843,8 @@ model userRole {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    user?    @relation(fields: [userId], references: [id])
-  appRole appRole? @relation(fields: [appRoleId], references: [id])
+  user    user?    @relation(fields: [userId], references: [id], onDelete: NoAction)
+  appRole appRole? @relation(fields: [appRoleId], references: [id], onDelete: NoAction)
 
   @@map("sso_urole")
 }
@@ -1660,7 +1858,7 @@ model provider {
   accountSecret String?
   status        Boolean     @default(true)
 
-  user user? @relation(fields: [userId], references: [id])
+  user user? @relation(fields: [userId], references: [id], onDelete: NoAction)
 
   @@map("sso_provider")
 }
@@ -1684,15 +1882,15 @@ model support {
 // HRS - HUMAN RESOURCE MANAGEMENT  MODELS
 
 model job {
-  id              String        @id @default(uuid())
-  title           String        @db.VarChar(255)
+  id              String         @id @default(uuid())
+  title           String         @db.VarChar(255)
   type            jobType
   yearsToNextRank Int?
-  allowNextRank   Boolean       @default(true)
-  staffCategory   staffCategory
-  status          Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  allowNextRank   Boolean        @default(true)
+  staffCategory   staffCategory?
+  status          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   promotion promotion[]
   staff     staff[]
@@ -1816,7 +2014,7 @@ model staff {
   dob             DateTime? @db.DateTime(3)
   maritalId       String?
   disabilities    String?   @db.VarChar(350)
-  phone           String    @db.VarChar(20)
+  phone           String?   @db.VarChar(20)
   email           String?   @db.VarChar(255)
   hometown        String?   @db.VarChar(255)
   birthplace      String?   @db.VarChar(255)
@@ -1851,12 +2049,14 @@ model staff {
   promotion  promotion? @relation("promotion", fields: [promotionId], references: [id])
   position   position?  @relation("position", fields: [positionId], references: [id])
 
-  transwift      transwift[]
-  staffPromotion promotion[] @relation("staffPromotion")
-  staffPosition  position[]  @relation("staffPosition")
-  assignee       sheet[]     @relation("assignee")
-  assessor       sheet[]     @relation("assessor")
-  certifier      sheet[]     @relation("certifier")
+  transwift       transwift[]
+  staffPromotion  promotion[]       @relation("staffPromotion")
+  staffPosition   position[]        @relation("staffPosition")
+  assignee        sheet[]           @relation("assignee")
+  assessor        sheet[]           @relation("assessor")
+  certifier       sheet[]           @relation("certifier")
+  backlogCreator  activityBacklog[] @relation("creator")
+  backlogApprover activityBacklog[] @relation("approver")
 
   @@map("hrs_staff")
 }

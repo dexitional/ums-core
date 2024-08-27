@@ -13,14 +13,15 @@ var axios = require('axios');
 module.exports = function (phone, msg, from) {
     return __awaiter(this, void 0, void 0, function* () {
         const data = {
-            key: 'pgC2DPZTwdbe68qPkuo4G36bV',
-            //key : 'B8pRALyxDgt4l5nRLOYVPoIm1', // Mnotify
+            //key : 'pgC2DPZTwdbe68qPkuo4G36bV', // Bulksmsgh
+            //key : 'B8pRALyxDgt4l5nRLOYVPoIm1', // Mnotify Kobby
+            key: 'TFkrdSQimG3aMBcBmCqaiwhsH',
             from: from || 'AUCC',
             to: phone,
             content: msg,
         };
-        const url = `http://clientlogin.bulksmsgh.com/smsapi?key=${data.key}&to=${escape(data.to)}&msg=${data.content}&sender_id=${data.from}`;
-        //const url = `https://apps.mnotify.net/smsapi?key=${data.key}&to=${data.to}&msg=${data.content}&sender_id=${data.from}`
+        //const url = `http://clientlogin.bulksmsgh.com/smsapi?key=${data.key}&to=${escape(data.to)}&msg=${data.content}&sender_id=${data.from}`
+        const url = `https://apps.mnotify.net/smsapi?key=${data.key}&to=${data.to}&msg=${data.content}&sender_id=${data.from}`;
         const options = {
             method: 'get',
             url: encodeURI(url),
@@ -29,7 +30,7 @@ module.exports = function (phone, msg, from) {
         const res = yield axios(options);
         const resp = yield res.data;
         //console.log(resp);
-        //return resp // mnotify
-        return { code: resp }; // bulksmgh
+        return resp; // mnotify
+        //return {code:resp} // bulksmgh
     });
 };
