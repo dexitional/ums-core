@@ -1541,7 +1541,7 @@ export default class AisController {
          if(resp?.structure?.length){
             var mdata:any = new Map(), sdata:any = new Map();
             for(const sv of resp?.structure){
-               const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` ?? 'none';
+               const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` || 'none';
                const zd = { ...sv, course: sv?.course?.title, code: sv?.course?.id, credit: sv?.course?.creditHour, practical: sv?.course?.practicalHour, theory: sv?.course?.theoryHour, type: sv?.type }
                // Data By Level - Semester
                if(mdata.has(index)){
@@ -1552,7 +1552,7 @@ export default class AisController {
             }
 
             for(const sv of resp?.structmeta){
-               const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` ?? 'none';
+               const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}, ${sv.semesterNum%2 == 0 ? 'SEMESTER 2':'SEMESTER 1'}` || 'none';
                const zd = { ...sv }
                // Data By Level - Semester
                if(sdata.has(index)){
@@ -1597,7 +1597,7 @@ export default class AisController {
           if(resp?.student?.length){
                var mdata:any = new Map();
                for(const sv of resp?.student){
-                  const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}` ?? 'none';
+                  const index: string = `LEVEL ${Math.ceil(sv.semesterNum/2)*100}` || 'none';
                   const zd = { ...sv }
                   // Data By Level - Semester
                   if(mdata.has(index)){
@@ -2951,10 +2951,11 @@ async approveBacklog(req: any,res: Response) {
                const cs = await ais.course.findUnique({ where: { id: r.courseId }});
                // Log Existing Data
                await ais.log.create({ data: { action:`BACKLOG_${type}`, user:req.userId, student:r.indexno, meta:as }});
+               console.log(as);
                // Upsert New Data
                return await ais.assessment.upsert({
                   where: { 
-                     id: as?.id
+                     id: as?.id ?? ''
                     // sessionId,
                      // courseId: r.courseId,
                      // indexno: r.indexno

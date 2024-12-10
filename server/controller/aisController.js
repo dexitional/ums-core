@@ -1558,7 +1558,7 @@ class AisController {
         });
     }
     fetchProgramStructure(req, res) {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
+        var _a, _b, _c, _d, _e, _f;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const resp = yield ais.program.findUnique({
@@ -1589,8 +1589,8 @@ class AisController {
                 if ((_a = resp === null || resp === void 0 ? void 0 : resp.structure) === null || _a === void 0 ? void 0 : _a.length) {
                     var mdata = new Map(), sdata = new Map();
                     for (const sv of resp === null || resp === void 0 ? void 0 : resp.structure) {
-                        const index = (_b = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}, ${sv.semesterNum % 2 == 0 ? 'SEMESTER 2' : 'SEMESTER 1'}`) !== null && _b !== void 0 ? _b : 'none';
-                        const zd = Object.assign(Object.assign({}, sv), { course: (_c = sv === null || sv === void 0 ? void 0 : sv.course) === null || _c === void 0 ? void 0 : _c.title, code: (_d = sv === null || sv === void 0 ? void 0 : sv.course) === null || _d === void 0 ? void 0 : _d.id, credit: (_e = sv === null || sv === void 0 ? void 0 : sv.course) === null || _e === void 0 ? void 0 : _e.creditHour, practical: (_f = sv === null || sv === void 0 ? void 0 : sv.course) === null || _f === void 0 ? void 0 : _f.practicalHour, theory: (_g = sv === null || sv === void 0 ? void 0 : sv.course) === null || _g === void 0 ? void 0 : _g.theoryHour, type: sv === null || sv === void 0 ? void 0 : sv.type });
+                        const index = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}, ${sv.semesterNum % 2 == 0 ? 'SEMESTER 2' : 'SEMESTER 1'}` || 'none';
+                        const zd = Object.assign(Object.assign({}, sv), { course: (_b = sv === null || sv === void 0 ? void 0 : sv.course) === null || _b === void 0 ? void 0 : _b.title, code: (_c = sv === null || sv === void 0 ? void 0 : sv.course) === null || _c === void 0 ? void 0 : _c.id, credit: (_d = sv === null || sv === void 0 ? void 0 : sv.course) === null || _d === void 0 ? void 0 : _d.creditHour, practical: (_e = sv === null || sv === void 0 ? void 0 : sv.course) === null || _e === void 0 ? void 0 : _e.practicalHour, theory: (_f = sv === null || sv === void 0 ? void 0 : sv.course) === null || _f === void 0 ? void 0 : _f.theoryHour, type: sv === null || sv === void 0 ? void 0 : sv.type });
                         // Data By Level - Semester
                         if (mdata.has(index)) {
                             mdata.set(index, [...mdata.get(index), Object.assign({}, zd)]);
@@ -1600,7 +1600,7 @@ class AisController {
                         }
                     }
                     for (const sv of resp === null || resp === void 0 ? void 0 : resp.structmeta) {
-                        const index = (_h = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}, ${sv.semesterNum % 2 == 0 ? 'SEMESTER 2' : 'SEMESTER 1'}`) !== null && _h !== void 0 ? _h : 'none';
+                        const index = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}, ${sv.semesterNum % 2 == 0 ? 'SEMESTER 2' : 'SEMESTER 1'}` || 'none';
                         const zd = Object.assign({}, sv);
                         // Data By Level - Semester
                         if (sdata.has(index)) {
@@ -1624,7 +1624,7 @@ class AisController {
         });
     }
     fetchProgramStudents(req, res) {
-        var _a, _b;
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const resp = yield ais.program.findUnique({
@@ -1650,7 +1650,7 @@ class AisController {
                 if ((_a = resp === null || resp === void 0 ? void 0 : resp.student) === null || _a === void 0 ? void 0 : _a.length) {
                     var mdata = new Map();
                     for (const sv of resp === null || resp === void 0 ? void 0 : resp.student) {
-                        const index = (_b = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}`) !== null && _b !== void 0 ? _b : 'none';
+                        const index = `LEVEL ${Math.ceil(sv.semesterNum / 2) * 100}` || 'none';
                         const zd = Object.assign({}, sv);
                         // Data By Level - Semester
                         if (mdata.has(index)) {
@@ -2986,14 +2986,16 @@ class AisController {
                         // }))
                         // resp = await ais.assessment.createMany({ data });
                         data = yield Promise.all(meta.map((r) => __awaiter(this, void 0, void 0, function* () {
+                            var _b;
                             const as = yield ais.assessment.findFirst({ where: { sessionId, courseId: r.courseId, indexno: r.indexno } });
                             const cs = yield ais.course.findUnique({ where: { id: r.courseId } });
                             // Log Existing Data
                             yield ais.log.create({ data: { action: `BACKLOG_${type}`, user: req.userId, student: r.indexno, meta: as } });
+                            console.log(as);
                             // Upsert New Data
                             return yield ais.assessment.upsert({
                                 where: {
-                                    id: as === null || as === void 0 ? void 0 : as.id
+                                    id: (_b = as === null || as === void 0 ? void 0 : as.id) !== null && _b !== void 0 ? _b : ''
                                     // sessionId,
                                     // courseId: r.courseId,
                                     // indexno: r.indexno
