@@ -72,7 +72,6 @@ class AuthController {
                         },
                         select: { id: true, title: true, admins: true }
                     });
-                    //console.log(user,roles,evsRoles)
                     // Construct UserData
                     //let userdata;
                     let userdata = { user, roles: [], photo };

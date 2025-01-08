@@ -8,6 +8,7 @@
     "start": "node server/index.js",
     "dev": "kill -9 $(lsof -ti:5030) && concurrently \"npx tsc --watch\" \"nodemon server/index.js\"",
     "dev2": "concurrently \"npx tsc --watch\" \"nodemon --delay 500ms -q server/index.js\"",
+    "dev3": "lsof -i TCP:$1 | grep LISTEN | awk '{print $2}' | xargs kill -9 && concurrently \"npx tsc --watch\" \"nodemon server/index.js\"",
     "prisma": "npx prisma generate --schema prisma/ums.prisma --watch"
   },
   "dependencies": {

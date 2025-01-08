@@ -57,7 +57,6 @@ export default class AuthController {
                   },
                   select: { id: true, title: true, admins: true  }
                 })
-                //console.log(user,roles,evsRoles)
                 
                 // Construct UserData
                 //let userdata;
@@ -71,8 +70,8 @@ export default class AuthController {
                           appRole: { 
                             app: { tag:'evs', title: r.title }
                           }
-                        })
-                      )) 
+                      })
+                    )) 
                   ]
                
                 console.log(userdata)

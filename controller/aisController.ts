@@ -13,6 +13,7 @@ const Auth = new AuthModel();
 const sha1 = require('sha1');
 const { customAlphabet } = require("nanoid");
 const pwdgen = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 6);
+const pingen = customAlphabet("1234567890", 4);
 const sms = require('../config/sms');
 
 
@@ -315,7 +316,7 @@ export default class AisController {
                   const zd = { ...sv, grade: await getGrade(sv.totalScore,grades ),gradepoint: await getGradePoint(sv.totalScore,grades ), classes }
                   // Data By Courses
                   if(mdata.has(index)){
-                    mdata.set(index, [...mdata.get(index), { ...zd }])
+                     mdata.set(index, [...mdata.get(index), { ...zd }])
                   }else{
                      mdata.set(index,[{ ...zd }])
                   }
@@ -356,9 +357,7 @@ export default class AisController {
      async fetchStudentActivity(req: Request,res: Response) {
          try {
             const resp = await ais.student.findUnique({
-               where: { 
-                  id: req.params.id 
-               },
+               where: { id: req.params.id },
                include: { 
                   country:true,
                   program:{
@@ -368,6 +367,7 @@ export default class AisController {
                   },
                }, 
             })
+
             if(resp){
             res.status(200).json(resp)
             } else {
@@ -380,30 +380,26 @@ export default class AisController {
      }
 
      async stageStudent(req: Request,res: Response) {
-      try {
-        const { studentId } = req.body
-        const password = pwdgen();
-        const isUser = await ais.user.findFirst({ where: { tag: studentId }})
-        if(isUser) throw("Student Portal Account Exists!")
-        const ssoData = { tag:studentId, username:studentId, password:sha1(password), unlockPin: password }  // AUCC only
-      //   const ssoData = { tag:studentId, username:studentId, password:sha1(password), unlockPin: password }  // MLK & Others
-         // Populate SSO Account
-         const resp = await ais.user.create({
-            data: {
-               ... ssoData,
-               group: { connect: { id: 1 }},
-            },
-         })
-        if(resp){
-           res.status(200).json(resp)
-        } else {
-           res.status(202).json({ message: `no records found` })
-        }
-        
-       } catch (error: any) {
-          console.log(error)
-          return res.status(500).json(error) 
-       }
+         try {
+            const { studentId } = req.body
+            const password = pwdgen();
+            const pin = pingen();
+            const isUser = await ais.user.findFirst({ where: { tag: studentId }})
+            if(isUser) throw("Student Portal Account Exists!")
+            const ssoData = { tag:studentId, username:studentId, password:sha1(password), unlockPin: pin }  // AUCC only
+            // const ssoData = { tag:studentId, username:studentId, password:sha1(password), unlockPin: password }  // MLK & Others
+            // Populate SSO Account
+            const resp = await ais.user.create({ data: {... ssoData, group: { connect: { id: 1 }} } })
+            if(resp){
+               res.status(200).json(resp)
+            } else {
+               res.status(202).json({ message: `no records found` })
+            }
+         
+         } catch (error: any) {
+            console.log(error)
+            return res.status(500).json(error) 
+         }
      }
 
      
@@ -416,7 +412,7 @@ export default class AisController {
             where: { tag: studentId },
             // data: { password: sha1(password), unlockPin: password },
             data: { password: sha1(password) },
-            include:true
+            include: true
         })
         if(resp?.count){
            // Send Password By SMS
@@ -434,7 +430,7 @@ export default class AisController {
       }
      }
 
-     async changePhoto(req: Request,res: Response) {
+     async changePhoto(req: Request, res: Response) {
       try {
         const { studentId } = req.body
         const password = pwdgen();

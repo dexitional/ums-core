@@ -26,6 +26,7 @@ const Auth = new authModel_1.default();
 const sha1 = require('sha1');
 const { customAlphabet } = require("nanoid");
 const pwdgen = customAlphabet("1234567890abcdefghijklmnopqrstuvwzyx", 6);
+const pingen = customAlphabet("1234567890", 4);
 const sms = require('../config/sms');
 class AisController {
     fetchTest(req, res) {
@@ -380,9 +381,7 @@ class AisController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const resp = yield ais.student.findUnique({
-                    where: {
-                        id: req.params.id
-                    },
+                    where: { id: req.params.id },
                     include: {
                         country: true,
                         program: {
@@ -410,15 +409,14 @@ class AisController {
             try {
                 const { studentId } = req.body;
                 const password = pwdgen();
+                const pin = pingen();
                 const isUser = yield ais.user.findFirst({ where: { tag: studentId } });
                 if (isUser)
                     throw ("Student Portal Account Exists!");
-                const ssoData = { tag: studentId, username: studentId, password: sha1(password), unlockPin: password }; // AUCC only
-                //   const ssoData = { tag:studentId, username:studentId, password:sha1(password), unlockPin: password }  // MLK & Others
+                const ssoData = { tag: studentId, username: studentId, password: sha1(password), unlockPin: pin }; // AUCC only
+                // const ssoData = { tag:studentId, username:studentId, password:sha1(password), unlockPin: password }  // MLK & Others
                 // Populate SSO Account
-                const resp = yield ais.user.create({
-                    data: Object.assign(Object.assign({}, ssoData), { group: { connect: { id: 1 } } }),
-                });
+                const resp = yield ais.user.create({ data: Object.assign(Object.assign({}, ssoData), { group: { connect: { id: 1 } } }) });
                 if (resp) {
                     res.status(200).json(resp);
                 }
